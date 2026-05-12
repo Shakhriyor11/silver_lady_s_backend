@@ -1,13 +1,22 @@
 package com.portfolio.silver_lady_s.controller;
 
+import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
+import com.portfolio.silver_lady_s.security.CurrentUser;
 import com.portfolio.silver_lady_s.service.ProductService;
+import com.portfolio.silver_lady_s.service.ProductViewService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -16,21 +25,43 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@Validated
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductViewService productViewService;
 
     @GetMapping
-    public List<ProductDto> getProducts(
+    public PageResponse<ProductDto> getProducts(
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0")  @Min(0)         int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
-        return productService.getProducts(categoryId, search);
+        Pageable pageable = PageRequest.of(page, size);
+        return productService.getProducts(categoryId, search, pageable);
     }
 
     @GetMapping("/{id}")
-    public ProductDto getById(@PathVariable Long id) {
-        return productService.getById(id);
+    public ProductDto getById(@PathVariable Long id, Authentication authentication) {
+        ProductDto dto = productService.getById(id);
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                Long userId = CurrentUser.principal().getUserId();
+                productViewService.recordView(userId, id);
+            } catch (Exception ignored) {
+                // view tracking xatosi asosiy so'rovni to'xtatmasin
+            }
+        }
+        return dto;
+    }
+
+    @GetMapping("/{id}/similar")
+    public List<ProductDto> getSimilar(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "6") @Min(1) @Max(20) int limit
+    ) {
+        return productService.getSimilarProducts(id, limit);
     }
 
     @PostMapping
@@ -51,5 +82,11 @@ public class ProductController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         productService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ProductDto restore(@PathVariable Long id) {
+        return productService.restore(id);
     }
 }

@@ -1,5 +1,6 @@
 package com.portfolio.silver_lady_s.service.impl;
 
+import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
@@ -10,6 +11,9 @@ import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,29 +29,42 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDto> getProducts(Long categoryId, String search) {
+    public PageResponse<ProductDto> getProducts(Long categoryId, String search, Pageable pageable) {
         String q = (search == null) ? null : search.trim();
 
-        List<Product> products;
+        Page<Product> page;
         if (categoryId != null && StringUtils.hasText(q)) {
-            products = productRepository.findByCategoryIdAndNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(categoryId, q);
+            page = productRepository
+                    .findByCategoryIdAndNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(categoryId, q, pageable);
         } else if (categoryId != null) {
-            products = productRepository.findByCategoryIdAndActiveTrueOrderByIdDesc(categoryId);
+            page = productRepository.findByCategoryIdAndActiveTrueOrderByIdDesc(categoryId, pageable);
         } else if (StringUtils.hasText(q)) {
-            products = productRepository.findByNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(q);
+            page = productRepository.findByNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(q, pageable);
         } else {
-            products = productRepository.findAllByActiveTrueOrderByIdDesc();
+            page = productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
         }
 
-        return products.stream().map(this::toDto).toList();
+        return new PageResponse<>(page.map(ProductDto::from));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductDto getById(Long id) {
-        Product p = productRepository.findByIdAndActiveTrue(id)
-                .orElseThrow(() -> new NotFoundException("Product not found: id=" + id));
-        return toDto(p);
+        return ProductDto.from(productRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new NotFoundException("Product not found: id=" + id)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductDto> getSimilarProducts(Long productId, int limit) {
+        Product product = productRepository.findByIdAndActiveTrue(productId)
+                .orElseThrow(() -> new NotFoundException("Product not found: id=" + productId));
+
+        return productRepository
+                .findSimilar(product.getCategory().getId(), productId, PageRequest.of(0, limit))
+                .stream()
+                .map(ProductDto::from)
+                .toList();
     }
 
     @Override
@@ -63,7 +80,7 @@ public class ProductServiceImpl implements ProductService {
         p.setCategory(c);
         if (req.getActive() != null) p.setActive(req.getActive());
 
-        return toDto(productRepository.save(p));
+        return ProductDto.from(productRepository.save(p));
     }
 
     @Override
@@ -81,7 +98,7 @@ public class ProductServiceImpl implements ProductService {
         p.setCategory(c);
         if (req.getActive() != null) p.setActive(req.getActive());
 
-        return toDto(productRepository.save(p));
+        return ProductDto.from(productRepository.save(p));
     }
 
     @Override
@@ -89,18 +106,16 @@ public class ProductServiceImpl implements ProductService {
     public void delete(Long id) {
         Product p = productRepository.findWithCategoryById(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + id));
-        productRepository.delete(p);
+        p.setActive(false);
+        productRepository.save(p);
     }
 
-    private ProductDto toDto(Product p) {
-        return new ProductDto(
-                p.getId(),
-                p.getName(),
-                p.getDescription(),
-                p.getPrice(),
-                p.getCategory().getId(),
-                p.getCategory().getName(),
-                p.isActive()
-        );
+    @Override
+    @Transactional
+    public ProductDto restore(Long id) {
+        Product p = productRepository.findByIdAndActiveFalse(id)
+                .orElseThrow(() -> new NotFoundException("Inactive product not found: id=" + id));
+        p.setActive(true);
+        return ProductDto.from(productRepository.save(p));
     }
 }

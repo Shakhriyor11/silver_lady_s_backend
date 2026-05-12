@@ -8,9 +8,13 @@ import lombok.Setter;
 @Entity
 @Table(name = "carts",
         uniqueConstraints = @UniqueConstraint(name = "uk_cart_user", columnNames = "user_id"))
-@Getter @Setter @NoArgsConstructor
-public class Cart {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Getter
+@Setter
+@NoArgsConstructor
+public class Cart extends BaseTimeEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(optional = false, fetch = FetchType.LAZY)

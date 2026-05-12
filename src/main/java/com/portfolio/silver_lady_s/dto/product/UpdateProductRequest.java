@@ -9,7 +9,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Getter @Setter
+@Getter
+@Setter
 public class UpdateProductRequest {
     @NotBlank @Size(max = 160)
     private String name;

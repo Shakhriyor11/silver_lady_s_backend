@@ -11,6 +11,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Component
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.bootstrap.admin.email:admin@silverladys.uz}")
     private String adminEmail;
 
-    @Value("${app.bootstrap.admin.password:Admin123!}")
+    @Value("${app.bootstrap.admin.password:}")
     private String adminPassword;
 
     @Value("${app.bootstrap.admin.full-name:Admin}")
@@ -47,12 +48,25 @@ public class DataInitializer implements CommandLineRunner {
             aboutUsRepository.save(a);
         }
 
-        if (adminEnabled && !userRepository.existsByEmailIgnoreCase(adminEmail)) {
+        if (adminEnabled && !userRepository.existsByRole(UserRole.ADMIN)) {
+            if (!StringUtils.hasText(adminPassword)) {
+                throw new IllegalStateException("BOOTSTRAP_ADMIN_PASSWORD is required when bootstrap admin is enabled");
+            }
+
+            String normalizedEmail = adminEmail.trim().toLowerCase();
+
+            if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+                throw new IllegalStateException(
+                        "Cannot bootstrap admin: user with email already exists -> " + normalizedEmail
+                );
+            }
+
             User admin = new User();
-            admin.setEmail(adminEmail.trim().toLowerCase());
-            admin.setFullName(adminFullName);
+            admin.setEmail(normalizedEmail);
+            admin.setFullName(adminFullName.trim());
             admin.setPasswordHash(passwordEncoder.encode(adminPassword));
             admin.setRole(UserRole.ADMIN);
+
             userRepository.save(admin);
         }
     }

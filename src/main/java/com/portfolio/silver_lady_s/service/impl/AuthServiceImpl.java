@@ -6,7 +6,7 @@ import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
 import com.portfolio.silver_lady_s.entity.User;
 import com.portfolio.silver_lady_s.entity.UserRole;
 import com.portfolio.silver_lady_s.exception.ConflictException;
-import com.portfolio.silver_lady_s.exception.NotFoundException;
+import com.portfolio.silver_lady_s.exception.UnauthorizedException;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.security.JwtService;
 import com.portfolio.silver_lady_s.service.AuthService;
@@ -27,6 +27,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest req) {
         String email = req.getEmail().trim().toLowerCase();
+
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new ConflictException("Email already registered");
         }
@@ -48,10 +49,10 @@ public class AuthServiceImpl implements AuthService {
         String email = req.getEmail().trim().toLowerCase();
 
         User u = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new NotFoundException("Invalid credentials"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
         if (!passwordEncoder.matches(req.getPassword(), u.getPasswordHash())) {
-            throw new NotFoundException("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         return new AuthResponse(jwtService.generateAccessToken(u));

@@ -9,6 +9,7 @@ import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.service.CartService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +46,7 @@ public class CartServiceImpl implements CartService {
                     ci.setCart(cart);
                     ci.setProduct(product);
                     ci.setQuantity(0);
-                    ci.setUnitPrice(product.getPrice()); // snapshot
+                    ci.setUnitPrice(product.getPrice());
                     return ci;
                 });
 
@@ -84,13 +85,22 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.deleteByCartId(cart.getId());
     }
 
-    private Cart getOrCreateCart(Long userId) {
+    // Race condition fix: parallel request ikkalasi ham cart yaratmoqchi bo'lsa,
+    // DataIntegrityViolationException tutib, bazada mavjud cart qaytariladi.
+    @Transactional
+    protected Cart getOrCreateCart(Long userId) {
         return cartRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NotFoundException("User not found: id=" + userId));
-            Cart cart = new Cart();
-            cart.setUser(user);
-            return cartRepository.save(cart);
+            try {
+                Cart cart = new Cart();
+                cart.setUser(user);
+                return cartRepository.saveAndFlush(cart);
+            } catch (DataIntegrityViolationException ex) {
+                // Parallel request allaqachon cart yaratib qo'ygan — mavjudini qaytaramiz
+                return cartRepository.findByUserId(userId)
+                        .orElseThrow(() -> new NotFoundException("User not found: id=" + userId));
+            }
         });
     }
 
