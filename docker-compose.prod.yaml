@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: silver_db
+    environment:
+      POSTGRES_DB: silver_lady_s_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    # 5432 port ATAYLAB tashqariga ochilmagan — faqat ichki tarmoqda
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - backend
+
+  app:
+    build: .
+    container_name: silver_app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/silver_lady_s_db
+      DDL_AUTO: update
+    volumes:
+      - uploads:/app/uploads
+    restart: always
+    networks:
+      - backend
+    healthcheck:
+      # bash TCP trick — tashqi tool (curl/wget) shart emas
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/localhost/8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: silver_nginx
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    restart: always
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:
+  certbot_certs:
+  certbot_www:
+
+networks:
+  backend:
+    driver: bridge
