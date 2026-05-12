@@ -25,4 +25,9 @@ USER appuser
 ENV PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# +UseContainerSupport: JVM konteyner memory limitini hurmat qiladi
+# MaxRAMPercentage: mavjud RAMning 75% ini heap uchun ajratadi
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-jar", "/app/app.jar"]

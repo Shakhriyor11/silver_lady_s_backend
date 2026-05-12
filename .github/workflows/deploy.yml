@@ -1,0 +1,35 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key:      ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.APP_DIR }}
+
+            echo "📥 Kod yangilanmoqda..."
+            git pull origin master
+
+            echo "🔨 App image qurilmoqda..."
+            docker compose -f docker-compose.prod.yaml build --no-cache app
+
+            echo "🚀 Konteynerlar qayta ishga tushirilmoqda..."
+            docker compose -f docker-compose.prod.yaml up -d
+
+            echo "🧹 Eski image'lar o'chirilmoqda..."
+            docker image prune -f
+
+            echo "✅ Deploy muvaffaqiyatli yakunlandi"
