@@ -11,3 +11,4 @@ public class SilverLadySApplication {
         SpringApplication.run(SilverLadySApplication.class, args);
     }
 }
+
