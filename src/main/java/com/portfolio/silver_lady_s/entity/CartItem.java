@@ -13,9 +13,13 @@ import java.math.BigDecimal;
         uniqueConstraints = @UniqueConstraint(name = "uk_cart_product", columnNames = {"cart_id", "product_id"}),
         indexes = @Index(name = "idx_cart_items_cart_id", columnList = "cart_id")
 )
-@Getter @Setter @NoArgsConstructor
-public class CartItem {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Getter
+@Setter
+@NoArgsConstructor
+public class CartItem extends BaseTimeEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

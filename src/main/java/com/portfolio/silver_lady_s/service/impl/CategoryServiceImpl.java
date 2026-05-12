@@ -1,5 +1,6 @@
 package com.portfolio.silver_lady_s.service.impl;
 
+import com.portfolio.silver_lady_s.config.CacheConfig;
 import com.portfolio.silver_lady_s.dto.category.CategoryDto;
 import com.portfolio.silver_lady_s.dto.category.CreateCategoryRequest;
 import com.portfolio.silver_lady_s.dto.category.UpdateCategoryRequest;
@@ -7,8 +8,11 @@ import com.portfolio.silver_lady_s.entity.Category;
 import com.portfolio.silver_lady_s.exception.ConflictException;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
+import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.CategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,9 +24,11 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(CacheConfig.CACHE_CATEGORIES)
     public List<CategoryDto> getAll() {
         return categoryRepository.findAll().stream()
                 .sorted(Comparator.comparing(Category::getId))
@@ -40,6 +46,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORIES, allEntries = true)
     public CategoryDto create(CreateCategoryRequest request) {
         String name = request.getName().trim();
         if (categoryRepository.existsByNameIgnoreCase(name)) {
@@ -52,6 +59,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORIES, allEntries = true)
     public CategoryDto update(Long id, UpdateCategoryRequest request) {
         Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found: id=" + id));
@@ -69,9 +77,16 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORIES, allEntries = true)
     public void delete(Long id) {
         Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found: id=" + id));
+
+        if (productRepository.existsByCategoryIdAndActiveTrue(id)) {
+            throw new ConflictException(
+                    "Cannot delete category: it has active products. Deactivate products first.");
+        }
+
         categoryRepository.delete(c);
     }
 

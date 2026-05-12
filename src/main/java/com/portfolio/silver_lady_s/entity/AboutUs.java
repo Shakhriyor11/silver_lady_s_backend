@@ -7,7 +7,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "about_us")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class AboutUs {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

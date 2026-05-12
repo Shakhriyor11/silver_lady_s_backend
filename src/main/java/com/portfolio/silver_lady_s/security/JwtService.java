@@ -19,6 +19,7 @@ public class JwtService {
     private final Algorithm algorithm;
     private final String issuer;
     private final long accessMinutes;
+    private final JWTVerifier verifier;
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
@@ -28,30 +29,27 @@ public class JwtService {
         this.algorithm = Algorithm.HMAC256(secret);
         this.issuer = issuer;
         this.accessMinutes = accessMinutes;
+        this.verifier = JWT.require(algorithm).withIssuer(issuer).build();
     }
 
     public String generateAccessToken(User user) {
         Instant now = Instant.now();
-        Instant exp = now.plus(accessMinutes, ChronoUnit.MINUTES);
-
         return JWT.create()
                 .withIssuer(issuer)
                 .withSubject(String.valueOf(user.getId()))
                 .withIssuedAt(now)
-                .withExpiresAt(exp)
+                .withExpiresAt(now.plus(accessMinutes, ChronoUnit.MINUTES))
                 .withClaim("email", user.getEmail())
                 .withClaim("role", user.getRole().name())
                 .sign(algorithm);
     }
 
     public UserPrincipal verify(String token) throws JWTVerificationException {
-        JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuer).build();
         DecodedJWT jwt = verifier.verify(token);
-
-        Long userId = Long.valueOf(jwt.getSubject());
-        String email = jwt.getClaim("email").asString();
-        UserRole role = UserRole.valueOf(jwt.getClaim("role").asString());
-
-        return new UserPrincipal(userId, email, role);
+        return new UserPrincipal(
+                Long.valueOf(jwt.getSubject()),
+                jwt.getClaim("email").asString(),
+                UserRole.valueOf(jwt.getClaim("role").asString())
+        );
     }
 }

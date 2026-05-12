@@ -11,8 +11,11 @@ import lombok.Setter;
         uniqueConstraints = @UniqueConstraint(name = "uk_category_name", columnNames = "name"),
         indexes = @Index(name = "idx_category_name", columnList = "name")
 )
-@Getter @Setter @NoArgsConstructor
-public class Category {
+@Getter
+@Setter
+@NoArgsConstructor
+public class Category extends BaseTimeEntity {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
