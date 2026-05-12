@@ -15,12 +15,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.portfolio.silver_lady_s.dto.PageResponse;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -195,5 +201,68 @@ class ProductServiceImplTest {
 
         assertThatThrownBy(() -> productService.getSimilarProducts(99L, 5))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    // ── getProducts (full-text search) ────────────────────────────────────────────
+
+    @Test
+    void getProducts_withSearchQuery_callsSearchActive() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.searchActive(eq("uzuk"), eq("%uzuk%"), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        PageResponse<ProductDto> result = productService.getProducts(null, "uzuk", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(productRepository).searchActive("uzuk", "%uzuk%", pageable);
+        verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
+    }
+
+    @Test
+    void getProducts_withSearchAndCategory_callsSearchActiveByCategory() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.searchActiveByCategory(eq("uzuk"), eq("%uzuk%"), eq(1L), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        PageResponse<ProductDto> result = productService.getProducts(1L, "uzuk", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(productRepository).searchActiveByCategory("uzuk", "%uzuk%", 1L, pageable);
+    }
+
+    @Test
+    void getProducts_emptySearch_callsFindAll() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.findAllByActiveTrueOrderByIdDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        PageResponse<ProductDto> result = productService.getProducts(null, "", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
+        verify(productRepository, never()).searchActive(any(), any(), any());
+    }
+
+    @Test
+    void getProducts_nullSearch_callsFindAll() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.findAllByActiveTrueOrderByIdDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        productService.getProducts(null, null, pageable);
+
+        verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
+    }
+
+    @Test
+    void getProducts_categoryOnly_callsFindByCategory() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.findByCategoryIdAndActiveTrueOrderByIdDesc(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        productService.getProducts(1L, null, pageable);
+
+        verify(productRepository).findByCategoryIdAndActiveTrueOrderByIdDesc(1L, pageable);
+        verify(productRepository, never()).searchActive(any(), any(), any());
     }
 }

@@ -33,13 +33,13 @@ public class ProductServiceImpl implements ProductService {
         String q = (search == null) ? null : search.trim();
 
         Page<Product> page;
-        if (categoryId != null && StringUtils.hasText(q)) {
-            page = productRepository
-                    .findByCategoryIdAndNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(categoryId, q, pageable);
+        if (StringUtils.hasText(q)) {
+            String pattern = "%" + q + "%";
+            page = (categoryId != null)
+                    ? productRepository.searchActiveByCategory(q, pattern, categoryId, pageable)
+                    : productRepository.searchActive(q, pattern, pageable);
         } else if (categoryId != null) {
             page = productRepository.findByCategoryIdAndActiveTrueOrderByIdDesc(categoryId, pageable);
-        } else if (StringUtils.hasText(q)) {
-            page = productRepository.findByNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(q, pageable);
         } else {
             page = productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
         }

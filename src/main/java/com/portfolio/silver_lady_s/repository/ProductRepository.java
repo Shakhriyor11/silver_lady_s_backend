@@ -19,12 +19,45 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = "category")
     Page<Product> findByCategoryIdAndActiveTrueOrderByIdDesc(Long categoryId, Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
-    Page<Product> findByNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(String name, Pageable pageable);
+    // pg_trgm: name + description bo'yicha qidiruv, similarity ranking
+    @Query(value = """
+            SELECT p.* FROM products p
+            WHERE p.active = true
+              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+            ORDER BY
+              similarity(p.name || ' ' || COALESCE(p.description, ''), :query) DESC,
+              p.id DESC
+            """,
+            countQuery = """
+            SELECT count(*) FROM products p
+            WHERE p.active = true
+              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+            """,
+            nativeQuery = true)
+    Page<Product> searchActive(@Param("query") String query,
+                               @Param("pattern") String pattern,
+                               Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
-    Page<Product> findByCategoryIdAndNameContainingIgnoreCaseAndActiveTrueOrderByIdDesc(
-            Long categoryId, String name, Pageable pageable);
+    @Query(value = """
+            SELECT p.* FROM products p
+            WHERE p.active = true
+              AND p.category_id = :categoryId
+              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+            ORDER BY
+              similarity(p.name || ' ' || COALESCE(p.description, ''), :query) DESC,
+              p.id DESC
+            """,
+            countQuery = """
+            SELECT count(*) FROM products p
+            WHERE p.active = true
+              AND p.category_id = :categoryId
+              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+            """,
+            nativeQuery = true)
+    Page<Product> searchActiveByCategory(@Param("query") String query,
+                                         @Param("pattern") String pattern,
+                                         @Param("categoryId") Long categoryId,
+                                         Pageable pageable);
 
     @EntityGraph(attributePaths = "category")
     Optional<Product> findByIdAndActiveTrue(Long id);
