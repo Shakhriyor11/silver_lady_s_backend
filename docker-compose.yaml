@@ -28,7 +28,10 @@ services:
       DB_URL: jdbc:postgresql://db:5432/silver_lady_s_db
     ports:
       - "${PORT:-8080}:8080"
+    volumes:
+      - uploads:/app/uploads
     restart: unless-stopped
 
 volumes:
   pgdata:
+  uploads:

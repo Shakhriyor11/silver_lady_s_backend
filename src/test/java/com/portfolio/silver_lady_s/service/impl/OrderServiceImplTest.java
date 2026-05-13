@@ -232,6 +232,31 @@ class OrderServiceImplTest {
     }
 
     @Test
+    void updateStatus_invalidTransition_throwsBadRequest() {
+        Order order = makeOrder(OrderStatus.PENDING);
+        when(orderRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(order));
+
+        UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
+        req.setStatus(OrderStatus.SHIPPED); // PENDING → SHIPPED noto'g'ri
+
+        assertThatThrownBy(() -> orderService.updateStatus(100L, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid status transition");
+    }
+
+    @Test
+    void updateStatus_terminalState_throwsBadRequest() {
+        Order order = makeOrder(OrderStatus.DELIVERED);
+        when(orderRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(order));
+
+        UpdateOrderStatusRequest req = new UpdateOrderStatusRequest();
+        req.setStatus(OrderStatus.PENDING); // DELIVERED → PENDING mumkin emas
+
+        assertThatThrownBy(() -> orderService.updateStatus(100L, req))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
     void updateStatus_notFound_throwsNotFoundException() {
         when(orderRepository.findByIdWithDetails(999L)).thenReturn(Optional.empty());
 

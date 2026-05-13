@@ -1,13 +1,62 @@
-name: Deploy to Production
+name: CI / Deploy to Production
 
 on:
   push:
     branches: [master]
 
 jobs:
+  # ── 1. Unit testlar ─────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run unit tests
+        run: |
+          mvn test \
+            -Dtest="AuthServiceImplTest,CategoryServiceImplTest,OrderServiceImplTest,ProductServiceImplTest" \
+            --no-transfer-progress
+
+  # ── 2. Integration testlar (Testcontainers — Docker kerak) ──────────────────
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run integration tests
+        run: |
+          mvn test \
+            -Dtest="AuthControllerTest,OrderControllerTest,ProductControllerTest" \
+            --no-transfer-progress
+        env:
+          # DB_PASSWORD application-test.yaml da override qilingan (testcontainers-placeholder)
+          # Shu yerda dummy qiymat yetarli — Testcontainers haqiqiy qiymatni o'rnatadi
+          DB_PASSWORD: ci-testcontainers-not-used
+
+  # ── 3. Production deploy ─────────────────────────────────────────────────────
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
+    needs: [test, integration-test]   # Har ikki test o'tmasdan deploy bo'lmaydi
 
     steps:
       - name: Deploy via SSH
@@ -20,16 +69,16 @@ jobs:
             set -e
             cd ${{ secrets.APP_DIR }}
 
-            echo "📥 Kod yangilanmoqda..."
+            echo "Kod yangilanmoqda..."
             git pull origin master
 
-            echo "🔨 App image qurilmoqda..."
+            echo "App image qurilmoqda..."
             docker compose -f docker-compose.prod.yaml build --no-cache app
 
-            echo "🚀 Konteynerlar qayta ishga tushirilmoqda..."
+            echo "Konteynerlar qayta ishga tushirilmoqda..."
             docker compose -f docker-compose.prod.yaml up -d
 
-            echo "🧹 Eski image'lar o'chirilmoqda..."
+            echo "Eski image'lar o'chirilmoqda..."
             docker image prune -f
 
-            echo "✅ Deploy muvaffaqiyatli yakunlandi"
+            echo "Deploy muvaffaqiyatli yakunlandi"

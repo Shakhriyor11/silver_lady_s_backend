@@ -24,9 +24,10 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final CartCreationHelper cartCreationHelper;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartResponse getMyCart(Long userId) {
         Cart cart = getOrCreateCart(userId);
         return toResponse(cart.getId());
@@ -85,21 +86,20 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.deleteByCartId(cart.getId());
     }
 
-    // Race condition fix: parallel request ikkalasi ham cart yaratmoqchi bo'lsa,
-    // DataIntegrityViolationException tutib, bazada mavjud cart qaytariladi.
     @Transactional
     protected Cart getOrCreateCart(Long userId) {
         return cartRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NotFoundException("User not found: id=" + userId));
             try {
-                Cart cart = new Cart();
-                cart.setUser(user);
-                return cartRepository.saveAndFlush(cart);
+                // CartCreationHelper REQUIRES_NEW ichida ishlaydi:
+                // Agar unique constraint xatosi yuz bersa, faqat ICHKI tranzaksiya
+                // rollback bo'ladi — bu (tashqi) tranzaksiya sog'lom qoladi.
+                return cartCreationHelper.createCart(user);
             } catch (DataIntegrityViolationException ex) {
-                // Parallel request allaqachon cart yaratib qo'ygan — mavjudini qaytaramiz
+                // Parallel so'rov allaqachon cart yaratib qo'ygan — mavjudini qaytaramiz
                 return cartRepository.findByUserId(userId)
-                        .orElseThrow(() -> new NotFoundException("User not found: id=" + userId));
+                        .orElseThrow(() -> new NotFoundException("Cart not found after concurrent create"));
             }
         });
     }
