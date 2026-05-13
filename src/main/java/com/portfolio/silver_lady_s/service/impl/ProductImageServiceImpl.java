@@ -93,8 +93,6 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Transactional
     public ProductImageDto setPrimary(Long productId, Long imageId) {
         findProduct(productId);
-        findImage(productId, imageId);
-
         productImageRepository.clearPrimaryByProductId(productId);
 
         ProductImage img = findImage(productId, imageId);

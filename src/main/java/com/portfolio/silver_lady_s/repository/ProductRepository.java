@@ -19,19 +19,33 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = "category")
     Page<Product> findByCategoryIdAndActiveTrueOrderByIdDesc(Long categoryId, Pageable pageable);
 
-    // pg_trgm: name + description bo'yicha qidiruv, similarity ranking
+    // ILIKE uses GIN trgm index (exact substring, fast).
+    // word_similarity fallback catches typos; GREATEST ranking works correctly for multi-word names.
     @Query(value = """
             SELECT p.* FROM products p
             WHERE p.active = true
-              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
             ORDER BY
-              similarity(p.name || ' ' || COALESCE(p.description, ''), :query) DESC,
+              GREATEST(
+                word_similarity(:query, p.name),
+                word_similarity(:query, COALESCE(p.description,''))
+              ) DESC,
               p.id DESC
             """,
             countQuery = """
             SELECT count(*) FROM products p
             WHERE p.active = true
-              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
             """,
             nativeQuery = true)
     Page<Product> searchActive(@Param("query") String query,
@@ -42,16 +56,29 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             SELECT p.* FROM products p
             WHERE p.active = true
               AND p.category_id = :categoryId
-              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
             ORDER BY
-              similarity(p.name || ' ' || COALESCE(p.description, ''), :query) DESC,
+              GREATEST(
+                word_similarity(:query, p.name),
+                word_similarity(:query, COALESCE(p.description,''))
+              ) DESC,
               p.id DESC
             """,
             countQuery = """
             SELECT count(*) FROM products p
             WHERE p.active = true
               AND p.category_id = :categoryId
-              AND (p.name ILIKE :pattern OR p.description ILIKE :pattern)
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
             """,
             nativeQuery = true)
     Page<Product> searchActiveByCategory(@Param("query") String query,

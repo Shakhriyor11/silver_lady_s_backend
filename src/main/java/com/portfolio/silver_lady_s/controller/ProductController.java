@@ -4,7 +4,7 @@ import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
-import com.portfolio.silver_lady_s.security.CurrentUser;
+import com.portfolio.silver_lady_s.security.UserPrincipal;
 import com.portfolio.silver_lady_s.service.ProductService;
 import com.portfolio.silver_lady_s.service.ProductViewService;
 import jakarta.validation.Valid;
@@ -45,10 +45,9 @@ public class ProductController {
     @GetMapping("/{id}")
     public ProductDto getById(@PathVariable Long id, Authentication authentication) {
         ProductDto dto = productService.getById(id);
-        if (authentication != null && authentication.isAuthenticated()) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal up) {
             try {
-                Long userId = CurrentUser.principal().getUserId();
-                productViewService.recordView(userId, id);
+                productViewService.recordView(up.getUserId(), id);
             } catch (Exception ignored) {
                 // view tracking xatosi asosiy so'rovni to'xtatmasin
             }

@@ -44,9 +44,8 @@ public class OrderController {
     }
 
     @PatchMapping("/my/{id}/cancel")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelOrder(@PathVariable Long id) {
-        orderService.cancelOrder(CurrentUser.principal().getUserId(), id);
+    public OrderDto cancelOrder(@PathVariable Long id) {
+        return orderService.cancelOrder(CurrentUser.principal().getUserId(), id);
     }
 
     // ── Admin endpoints ─────────────────────────────────────────────────────────

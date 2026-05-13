@@ -22,5 +22,5 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     // Muddati o'tgan va bekor qilingan tokenlarni tozalash uchun (scheduler tomonidan chaqiriladi)
     @Modifying
     @Query("DELETE FROM RefreshToken rt WHERE rt.expiresAt < :threshold OR rt.revoked = true")
-    void deleteExpiredAndRevoked(@Param("threshold") Instant threshold);
+    int deleteExpiredAndRevoked(@Param("threshold") Instant threshold);
 }

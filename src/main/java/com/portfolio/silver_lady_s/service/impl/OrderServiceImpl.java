@@ -15,8 +15,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageImpl;
+
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -96,7 +101,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void cancelOrder(Long userId, Long orderId) {
+    public OrderDto cancelOrder(Long userId, Long orderId) {
         Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new NotFoundException("Order not found: id=" + orderId));
 
@@ -106,15 +111,26 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
+        return OrderDto.from(orderRepository.save(order));
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderDto> getAllOrders(Pageable pageable) {
-        Page<OrderDto> page = orderRepository.findAll(pageable)
-                .map(OrderDto::from);
-        return new PageResponse<>(page);
+        Page<Long> idPage = orderRepository.findAllIds(pageable);
+        List<Long> ids = idPage.getContent();
+        if (ids.isEmpty()) {
+            return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
+        }
+        List<Order> orders = orderRepository.findAllWithItemsByIds(ids);
+        Map<Long, Order> byId = orders.stream()
+                .collect(Collectors.toMap(Order::getId, o -> o));
+        List<OrderDto> dtos = ids.stream()
+                .map(byId::get)
+                .filter(Objects::nonNull)
+                .map(OrderDto::from)
+                .toList();
+        return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
     }
 
     @Override
@@ -131,7 +147,15 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found: id=" + orderId));
 
-        order.setStatus(request.getStatus());
+        OrderStatus current = order.getStatus();
+        OrderStatus next    = request.getStatus();
+
+        if (!current.canTransitionTo(next)) {
+            throw new BadRequestException(
+                    "Invalid status transition: " + current + " → " + next);
+        }
+
+        order.setStatus(next);
         return OrderDto.from(orderRepository.save(order));
     }
 
