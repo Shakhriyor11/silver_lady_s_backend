@@ -16,7 +16,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -30,9 +29,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     @Cacheable(CacheConfig.CACHE_CATEGORIES)
     public List<CategoryDto> getAll() {
-        return categoryRepository.findAll().stream()
-                .sorted(Comparator.comparing(Category::getId))
-                .map(this::toDto)
+        return categoryRepository.findAllByOrderByIdAsc().stream()
+                .map(CategoryDto::from)
                 .toList();
     }
 
@@ -41,7 +39,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto getById(Long id) {
         Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found: id=" + id));
-        return toDto(c);
+        return CategoryDto.from(c);
     }
 
     @Override
@@ -54,7 +52,10 @@ public class CategoryServiceImpl implements CategoryService {
         }
         Category c = new Category();
         c.setName(name);
-        return toDto(categoryRepository.save(c));
+        c.setNameUz(request.getNameUz());
+        c.setNameRu(request.getNameRu());
+        c.setNameEn(request.getNameEn());
+        return CategoryDto.from(categoryRepository.save(c));
     }
 
     @Override
@@ -72,7 +73,10 @@ public class CategoryServiceImpl implements CategoryService {
         });
 
         c.setName(newName);
-        return toDto(categoryRepository.save(c));
+        c.setNameUz(request.getNameUz());
+        c.setNameRu(request.getNameRu());
+        c.setNameEn(request.getNameEn());
+        return CategoryDto.from(categoryRepository.save(c));
     }
 
     @Override
@@ -82,15 +86,11 @@ public class CategoryServiceImpl implements CategoryService {
         Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found: id=" + id));
 
-        if (productRepository.existsByCategoryIdAndActiveTrue(id)) {
+        if (productRepository.existsByCategoriesId(id)) {
             throw new ConflictException(
-                    "Cannot delete category: it has active products. Deactivate products first.");
+                    "Cannot delete category: products are using it. Remove the category from all products first.");
         }
 
         categoryRepository.delete(c);
-    }
-
-    private CategoryDto toDto(Category c) {
-        return new CategoryDto(c.getId(), c.getName());
     }
 }

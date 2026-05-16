@@ -15,15 +15,15 @@ public class CacheConfig {
 
     public static final String CACHE_CATEGORIES = "categories";
     public static final String CACHE_ABOUT      = "about";
+    public static final String CACHE_CAROUSEL   = "carousel";
 
     @Bean
     public CacheManager cacheManager() {
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
-                // Kategoriyalar kamdan-kam o'zgaradi — 10 daqiqa
                 build(CACHE_CATEGORIES, 10, TimeUnit.MINUTES, 100),
-                // About sahifasi deyarli o'zgarmaydi — 30 daqiqa
-                build(CACHE_ABOUT, 30, TimeUnit.MINUTES, 10)
+                build(CACHE_ABOUT,       30, TimeUnit.MINUTES,  10),
+                build(CACHE_CAROUSEL,     5, TimeUnit.MINUTES,  10)
         ));
         return manager;
     }

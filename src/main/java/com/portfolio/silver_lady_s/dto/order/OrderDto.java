@@ -13,6 +13,8 @@ public record OrderDto(
         BigDecimal totalAmount,
         String shippingAddress,
         String phone,
+        String userFullName,
+        String userEmail,
         List<OrderItemDto> items,
         Instant createdAt,
         Instant updatedAt
@@ -27,6 +29,8 @@ public record OrderDto(
                 order.getTotalAmount(),
                 order.getShippingAddress(),
                 order.getPhone(),
+                order.getUser() != null ? order.getUser().getFullName() : null,
+                order.getUser() != null ? order.getUser().getEmail()    : null,
                 items,
                 order.getCreatedAt(),
                 order.getUpdatedAt()

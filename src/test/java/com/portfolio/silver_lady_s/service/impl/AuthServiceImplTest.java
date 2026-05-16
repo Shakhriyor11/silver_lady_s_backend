@@ -11,6 +11,7 @@ import com.portfolio.silver_lady_s.exception.UnauthorizedException;
 import com.portfolio.silver_lady_s.repository.RefreshTokenRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.security.JwtService;
+import com.portfolio.silver_lady_s.service.SmsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +35,7 @@ class AuthServiceImplTest {
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private SmsService smsService;
 
     @InjectMocks private AuthServiceImpl authService;
 
@@ -178,8 +180,8 @@ class AuthServiceImplTest {
 
         assertThat(result.getAccessToken()).isEqualTo("new-access-token");
         assertThat(result.getRefreshToken()).isNotBlank();
-        assertThat(result.getRefreshToken()).isNotEqualTo("old-uuid"); // rotated
-        assertThat(rt.isRevoked()).isTrue(); // old token revoked
+        assertThat(result.getRefreshToken()).isNotEqualTo("old-uuid");
+        assertThat(rt.isRevoked()).isTrue();
     }
 
     @Test
@@ -203,7 +205,6 @@ class AuthServiceImplTest {
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("already used");
 
-        // Barcha tokenlar bekor qilinishi kerak (token theft himoyasi)
         verify(refreshTokenRepository).revokeAllByUserId(1L);
     }
 
@@ -211,7 +212,7 @@ class AuthServiceImplTest {
     void refresh_expiredToken_throwsUnauthorized() {
         User user = makeUser(1L, "ali@example.com", "hashed");
         RefreshToken rt = makeRefreshToken("expired-uuid", user, false,
-                Instant.now().minusSeconds(1)); // expired
+                Instant.now().minusSeconds(1));
 
         when(refreshTokenRepository.findByToken("expired-uuid")).thenReturn(Optional.of(rt));
         when(refreshTokenRepository.save(rt)).thenReturn(rt);
@@ -244,7 +245,6 @@ class AuthServiceImplTest {
     void logout_unknownToken_doesNotThrow() {
         when(refreshTokenRepository.findByToken("ghost-uuid")).thenReturn(Optional.empty());
 
-        // Idempotent — mavjud bo'lmasa ham xato chiqarmasin
         authService.logout("ghost-uuid");
 
         verify(refreshTokenRepository, never()).save(any());

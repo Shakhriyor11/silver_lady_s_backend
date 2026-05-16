@@ -1,7 +1,9 @@
 package com.portfolio.silver_lady_s.controller;
 
+import com.portfolio.silver_lady_s.dto.contact.AdminMessageRequest;
 import com.portfolio.silver_lady_s.dto.contact.ContactRequest;
 import com.portfolio.silver_lady_s.dto.contact.ContactResponse;
+import com.portfolio.silver_lady_s.dto.contact.ReplyRequest;
 import com.portfolio.silver_lady_s.security.CurrentUser;
 import com.portfolio.silver_lady_s.service.ContactService;
 import jakarta.validation.Valid;
@@ -9,11 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
 
 /**
  * Sotuvchi (do'kon) bilan aloqa so'rovlari.
@@ -31,10 +31,10 @@ public class ContactController {
     private final ContactService contactService;
 
     @PostMapping
-    public ResponseEntity<ContactResponse> send(@Valid @RequestBody ContactRequest req) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ContactResponse send(@Valid @RequestBody ContactRequest req) {
         Long userId = CurrentUser.principal().getUserId();
-        ContactResponse created = contactService.send(userId, req);
-        return ResponseEntity.created(URI.create("/api/contact/" + created.getId())).body(created);
+        return contactService.send(userId, req);
     }
 
     @GetMapping
@@ -55,5 +55,26 @@ public class ContactController {
     @PreAuthorize("hasRole('ADMIN')")
     public ContactResponse markRead(@PathVariable Long id) {
         return contactService.markRead(id);
+    }
+
+    @PostMapping("/{id}/reply")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ContactResponse reply(@PathVariable Long id, @Valid @RequestBody ReplyRequest req) {
+        return contactService.reply(id, req.getReply());
+    }
+
+    @GetMapping("/mine")
+    public Page<ContactResponse> myMessages(
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
+    ) {
+        Long userId = CurrentUser.principal().getUserId();
+        return contactService.listByUser(userId, pageable);
+    }
+
+    @PostMapping("/admin/send")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ContactResponse sendToUser(@Valid @RequestBody AdminMessageRequest req) {
+        return contactService.sendToUser(req.getTargetUserId(), req.getSubject(), req.getMessage());
     }
 }

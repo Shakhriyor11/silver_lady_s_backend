@@ -21,4 +21,8 @@ public class Category extends BaseTimeEntity {
 
     @Column(nullable = false, length = 80)
     private String name;
+
+    @Column(length = 80) private String nameUz;
+    @Column(length = 80) private String nameRu;
+    @Column(length = 80) private String nameEn;
 }

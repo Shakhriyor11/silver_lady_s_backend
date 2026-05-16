@@ -12,18 +12,17 @@ import java.util.Optional;
 
 public interface ContactMessageRepository extends JpaRepository<ContactMessage, Long> {
 
-    /**
-     * Admin uchun barcha xabarlar — foydalanuvchi va mahsulot ma'lumotlari bilan.
-     * Spring Data Page<findAll> ni @EntityGraph bilan to'g'ri override qiladi.
-     */
-    @EntityGraph(attributePaths = {"user", "product", "product.category"})
+    @Override
+    @EntityGraph(attributePaths = {"user", "product", "product.categories"})
+    @Query(value = "SELECT m FROM ContactMessage m",
+           countQuery = "SELECT count(m) FROM ContactMessage m")
     Page<ContactMessage> findAll(Pageable pageable);
 
-    /**
-     * Bitta xabarni to'liq ma'lumotlar bilan olish.
-     * Nomi oddiy — Spring Data uni to'g'ri tushunadi.
-     */
-    @EntityGraph(attributePaths = {"user", "product", "product.category"})
+    @EntityGraph(attributePaths = {"user", "product", "product.categories"})
     @Query("SELECT m FROM ContactMessage m WHERE m.id = :id")
     Optional<ContactMessage> findByIdWithDetails(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"product", "product.categories"})
+    @Query("SELECT m FROM ContactMessage m WHERE m.user.id = :userId ORDER BY m.createdAt DESC")
+    Page<ContactMessage> findByUserId(@Param("userId") Long userId, Pageable pageable);
 }

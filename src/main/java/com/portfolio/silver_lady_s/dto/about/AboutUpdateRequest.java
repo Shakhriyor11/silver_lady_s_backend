@@ -9,11 +9,20 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AboutUpdateRequest {
+
     @NotBlank @Size(max = 120)
     private String shopName;
 
+    @Size(max = 120) private String shopNameUz;
+    @Size(max = 120) private String shopNameRu;
+    @Size(max = 120) private String shopNameEn;
+
     @NotBlank @Size(max = 255)
     private String address;
+
+    @Size(max = 255) private String addressUz;
+    @Size(max = 255) private String addressRu;
+    @Size(max = 255) private String addressEn;
 
     @NotBlank @Size(max = 40)
     private String phone;
@@ -24,9 +33,17 @@ public class AboutUpdateRequest {
     @NotBlank @Size(max = 80)
     private String workingHours;
 
+    @Size(max = 80) private String workingHoursUz;
+    @Size(max = 80) private String workingHoursRu;
+    @Size(max = 80) private String workingHoursEn;
+
     @Size(max = 500)
     private String locationLink;
 
     @Size(max = 5000)
     private String description;
+
+    @Size(max = 5000) private String descriptionUz;
+    @Size(max = 5000) private String descriptionRu;
+    @Size(max = 5000) private String descriptionEn;
 }

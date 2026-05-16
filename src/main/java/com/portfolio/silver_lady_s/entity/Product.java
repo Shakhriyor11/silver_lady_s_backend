@@ -6,16 +6,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(
         name = "products",
         indexes = {
-                @Index(name = "idx_product_name",        columnList = "name"),
-                @Index(name = "idx_product_category_id", columnList = "category_id"),
-                @Index(name = "idx_product_created_at",  columnList = "created_at")
+                @Index(name = "idx_product_name",       columnList = "name"),
+                @Index(name = "idx_product_created_at", columnList = "created_at")
         }
 )
 @Getter
@@ -29,16 +31,41 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false, length = 160)
     private String name;
 
+    @Column(length = 160) private String nameUz;
+    @Column(length = 160) private String nameRu;
+    @Column(length = 160) private String nameEn;
+
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(columnDefinition = "TEXT") private String descriptionUz;
+    @Column(columnDefinition = "TEXT") private String descriptionRu;
+    @Column(columnDefinition = "TEXT") private String descriptionEn;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal price;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_product_category"))
-    private Category category;
+    @Column(name = "discount_percent")
+    private Integer discountPercent;
+
+    @Column(name = "discount_amount", precision = 19, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "discount_starts_at")
+    private Instant discountStartsAt;
+
+    @Column(name = "discount_ends_at")
+    private Instant discountEndsAt;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "product_categories",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id"),
+            foreignKey = @ForeignKey(name = "fk_pc_product"),
+            inverseForeignKey = @ForeignKey(name = "fk_pc_category")
+    )
+    private Set<Category> categories = new HashSet<>();
 
     @Column(nullable = false)
     private boolean active = true;
