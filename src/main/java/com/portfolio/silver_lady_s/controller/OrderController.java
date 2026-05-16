@@ -6,18 +6,28 @@ import com.portfolio.silver_lady_s.dto.order.OrderDto;
 import com.portfolio.silver_lady_s.dto.order.UpdateOrderStatusRequest;
 import com.portfolio.silver_lady_s.security.CurrentUser;
 import com.portfolio.silver_lady_s.service.OrderService;
+import com.portfolio.silver_lady_s.exception.BadRequestException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@Validated
 public class OrderController {
+
+    private static final Set<String> SORTABLE_FIELDS =
+            Set.of("createdAt", "updatedAt", "totalAmount", "status");
 
     private final OrderService orderService;
 
@@ -31,8 +41,8 @@ public class OrderController {
 
     @GetMapping("/my")
     public PageResponse<OrderDto> getMyOrders(
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0")                    int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         return orderService.getMyOrders(
                 CurrentUser.principal().getUserId(),
                 PageRequest.of(page, size, Sort.by("createdAt").descending()));
@@ -53,10 +63,14 @@ public class OrderController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public PageResponse<OrderDto> getAllOrders(
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String dir) {
+            @RequestParam(defaultValue = "0")                    int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "createdAt")            String sortBy,
+            @RequestParam(defaultValue = "desc")                 String dir) {
+        if (!SORTABLE_FIELDS.contains(sortBy)) {
+            throw new BadRequestException(
+                    "Invalid sortBy: '" + sortBy + "'. Allowed: " + SORTABLE_FIELDS);
+        }
         Sort sort = dir.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();

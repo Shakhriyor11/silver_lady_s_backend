@@ -13,16 +13,34 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @EntityGraph(attributePaths = "category")
+    // ── List views (batch-fetch categories via default_batch_fetch_size) ──────
+
     Page<Product> findAllByActiveTrueOrderByIdDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
-    Page<Product> findByCategoryIdAndActiveTrueOrderByIdDesc(Long categoryId, Pageable pageable);
+    Page<Product> findAllByActiveFalseOrderByIdDesc(Pageable pageable);
 
-    // ILIKE uses GIN trgm index (exact substring, fast).
-    // word_similarity fallback catches typos; GREATEST ranking works correctly for multi-word names.
+    // ── Category-filtered list (two-step: native IDs → JPQL fetch) ───────────
+
     @Query(value = """
-            SELECT p.* FROM products p
+            SELECT p.id FROM products p
+            JOIN product_categories pc ON pc.product_id = p.id
+            WHERE p.active = true
+              AND pc.category_id = :categoryId
+            ORDER BY p.id DESC
+            """,
+            countQuery = """
+            SELECT count(DISTINCT p.id) FROM products p
+            JOIN product_categories pc ON pc.product_id = p.id
+            WHERE p.active = true
+              AND pc.category_id = :categoryId
+            """,
+            nativeQuery = true)
+    Page<Long> findIdsByCategoryActive(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    // ── Full-text search (two-step: native IDs → JPQL fetch) ─────────────────
+
+    @Query(value = """
+            SELECT p.id FROM products p
             WHERE p.active = true
               AND (
                 p.name           ILIKE :pattern
@@ -48,14 +66,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
               )
             """,
             nativeQuery = true)
-    Page<Product> searchActive(@Param("query") String query,
+    Page<Long> searchActiveIds(@Param("query") String query,
                                @Param("pattern") String pattern,
                                Pageable pageable);
 
     @Query(value = """
-            SELECT p.* FROM products p
+            SELECT p.id FROM products p
             WHERE p.active = true
-              AND p.category_id = :categoryId
+              AND EXISTS (
+                  SELECT 1 FROM product_categories pc
+                  WHERE pc.product_id = p.id AND pc.category_id = :categoryId
+              )
               AND (
                 p.name           ILIKE :pattern
                 OR p.description ILIKE :pattern
@@ -72,7 +93,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             countQuery = """
             SELECT count(*) FROM products p
             WHERE p.active = true
-              AND p.category_id = :categoryId
+              AND EXISTS (
+                  SELECT 1 FROM product_categories pc
+                  WHERE pc.product_id = p.id AND pc.category_id = :categoryId
+              )
               AND (
                 p.name           ILIKE :pattern
                 OR p.description ILIKE :pattern
@@ -81,39 +105,59 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
               )
             """,
             nativeQuery = true)
-    Page<Product> searchActiveByCategory(@Param("query") String query,
+    Page<Long> searchActiveByCategoryIds(@Param("query") String query,
                                          @Param("pattern") String pattern,
                                          @Param("categoryId") Long categoryId,
                                          Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
+    // ── Step-2 fetch with JOIN FETCH (used after ID pagination) ──────────────
+
+    @Query("""
+            SELECT DISTINCT p FROM Product p
+            LEFT JOIN FETCH p.categories
+            LEFT JOIN FETCH p.images
+            WHERE p.id IN :ids
+            """)
+    List<Product> findByIdsWithDetails(@Param("ids") List<Long> ids);
+
+    // ── Single product fetches ────────────────────────────────────────────────
+
+    @EntityGraph(attributePaths = {"categories", "images"})
+    @Query("SELECT p FROM Product p WHERE p.id = :id AND p.active = true")
+    Optional<Product> findByIdAndActiveTrueWithImages(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = "categories")
     Optional<Product> findByIdAndActiveTrue(Long id);
 
-    boolean existsByCategoryIdAndActiveTrue(Long categoryId);
-
-    /** Admin: o'chirilgan (active=false) mahsulotni topish uchun */
-    @EntityGraph(attributePaths = "category")
+    @EntityGraph(attributePaths = "categories")
     Optional<Product> findByIdAndActiveFalse(Long id);
 
-    @EntityGraph(attributePaths = "category")
+    @EntityGraph(attributePaths = "categories")
     Optional<Product> findWithCategoryById(Long id);
 
-    @EntityGraph(attributePaths = "category")
+    // ── Existence checks ──────────────────────────────────────────────────────
+
+    boolean existsByCategoriesId(Long categoryId);
+
+    // ── Similar & Recommendation queries ─────────────────────────────────────
+
     @Query("""
-            SELECT p FROM Product p
-            WHERE p.category.id = :categoryId
+            SELECT DISTINCT p FROM Product p
+            JOIN FETCH p.categories cats
+            LEFT JOIN FETCH p.images
+            WHERE cats.id IN :categoryIds
               AND p.id <> :excludeId
               AND p.active = true
             ORDER BY p.id DESC
             """)
-    List<Product> findSimilar(@Param("categoryId") Long categoryId,
+    List<Product> findSimilar(@Param("categoryIds") List<Long> categoryIds,
                               @Param("excludeId") Long excludeId,
                               Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
     @Query("""
-            SELECT p FROM Product p
-            WHERE p.category.id IN :categoryIds
+            SELECT DISTINCT p FROM Product p
+            JOIN p.categories cat
+            WHERE cat.id IN :categoryIds
               AND p.id NOT IN :excludeIds
               AND p.active = true
             ORDER BY p.id DESC
@@ -123,7 +167,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("excludeIds") List<Long> excludeIds,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
     @Query("""
             SELECT p FROM Product p
             WHERE p.active = true

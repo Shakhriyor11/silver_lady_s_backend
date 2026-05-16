@@ -36,12 +36,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Value("${app.rate-limit.enabled:true}")
     private boolean enabled;
 
-    private static final int    MAX_REQUESTS_PER_MINUTE = 10;
+    private static final int    MAX_REQUESTS_PER_MINUTE     = 10;
+    private static final int    OTP_MAX_REQUESTS_PER_MINUTE = 5;
     private static final String LOGIN_PATH    = "/api/auth/login";
     private static final String REGISTER_PATH = "/api/auth/register";
+    private static final String OTP_SEND_PATH = "/api/auth/otp/send";
 
     // Caffeine: 10 daqiqa ishlatilmagan IP avtomatik o'chiriladi; max 50 000 ta yozuv
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofMinutes(10))
+            .maximumSize(50_000)
+            .build();
+
+    // OTP uchun alohida, qattiqroq bucket (SMS xarajati oldini olish)
+    private final Cache<String, Bucket> otpBuckets = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
             .maximumSize(50_000)
             .build();
@@ -57,13 +65,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String path = request.getRequestURI();
-        if (!path.equals(LOGIN_PATH) && !path.equals(REGISTER_PATH)) {
+        boolean isOtpPath  = path.equals(OTP_SEND_PATH);
+        boolean isAuthPath = path.equals(LOGIN_PATH) || path.equals(REGISTER_PATH);
+
+        if (!isAuthPath && !isOtpPath) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String ip     = getClientIp(request);
-        Bucket bucket = buckets.get(ip, this::newBucket);
+        String ip = getClientIp(request);
+        Bucket bucket = isOtpPath
+                ? otpBuckets.get(ip, this::newOtpBucket)
+                : buckets.get(ip, this::newBucket);
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
@@ -79,6 +92,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private Bucket newBucket(String ip) {
         Refill refill = Refill.intervally(MAX_REQUESTS_PER_MINUTE, Duration.ofMinutes(1));
         Bandwidth limit = Bandwidth.classic(MAX_REQUESTS_PER_MINUTE, refill);
+        return Bucket.builder().addLimit(limit).build();
+    }
+
+    private Bucket newOtpBucket(String ip) {
+        Refill refill = Refill.intervally(OTP_MAX_REQUESTS_PER_MINUTE, Duration.ofMinutes(1));
+        Bandwidth limit = Bandwidth.classic(OTP_MAX_REQUESTS_PER_MINUTE, refill);
         return Bucket.builder().addLimit(limit).build();
     }
 

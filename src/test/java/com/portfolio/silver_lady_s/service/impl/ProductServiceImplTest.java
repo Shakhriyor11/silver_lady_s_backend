@@ -1,5 +1,6 @@
 package com.portfolio.silver_lady_s.service.impl;
 
+import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
@@ -14,8 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.portfolio.silver_lady_s.dto.PageResponse;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -51,7 +50,7 @@ class ProductServiceImplTest {
         product.setName("Oltin uzuk");
         product.setDescription("24 karat oltin");
         product.setPrice(new BigDecimal("500000.00"));
-        product.setCategory(category);
+        product.getCategories().add(category);
         product.setActive(true);
     }
 
@@ -59,20 +58,21 @@ class ProductServiceImplTest {
 
     @Test
     void getById_activeProduct_returnsDto() {
-        when(productRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndActiveTrueWithImages(10L)).thenReturn(Optional.of(product));
 
         ProductDto result = productService.getById(10L);
 
         assertThat(result.getId()).isEqualTo(10L);
         assertThat(result.getName()).isEqualTo("Oltin uzuk");
         assertThat(result.getPrice()).isEqualByComparingTo("500000.00");
-        assertThat(result.getCategoryId()).isEqualTo(1L);
+        assertThat(result.getCategories()).hasSize(1);
+        assertThat(result.getCategories().get(0).getId()).isEqualTo(1L);
         assertThat(result.isActive()).isTrue();
     }
 
     @Test
     void getById_notFound_throwsNotFoundException() {
-        when(productRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
+        when(productRepository.findByIdAndActiveTrueWithImages(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> productService.getById(99L))
                 .isInstanceOf(NotFoundException.class)
@@ -87,9 +87,9 @@ class ProductServiceImplTest {
         req.setName("  Kumush uzuk  ");
         req.setDescription("Sterling kumush");
         req.setPrice(new BigDecimal("120000.00"));
-        req.setCategoryId(1L);
+        req.setCategoryIds(List.of(1L));
 
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> {
             Product p = inv.getArgument(0);
             p.setId(11L);
@@ -98,7 +98,7 @@ class ProductServiceImplTest {
 
         ProductDto result = productService.create(req);
 
-        assertThat(result.getName()).isEqualTo("Kumush uzuk"); // trimmed
+        assertThat(result.getName()).isEqualTo("Kumush uzuk");
         assertThat(result.getId()).isEqualTo(11L);
     }
 
@@ -107,13 +107,12 @@ class ProductServiceImplTest {
         CreateProductRequest req = new CreateProductRequest();
         req.setName("Uzuk");
         req.setPrice(new BigDecimal("100000.00"));
-        req.setCategoryId(99L);
+        req.setCategoryIds(List.of(99L));
 
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findAllById(List.of(99L))).thenReturn(List.of());
 
         assertThatThrownBy(() -> productService.create(req))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("99");
+                .isInstanceOf(NotFoundException.class);
     }
 
     // ── update ───────────────────────────────────────────────────────────────────
@@ -123,10 +122,10 @@ class ProductServiceImplTest {
         UpdateProductRequest req = new UpdateProductRequest();
         req.setName("Yangilangan uzuk");
         req.setPrice(new BigDecimal("600000.00"));
-        req.setCategoryId(1L);
+        req.setCategoryIds(List.of(1L));
 
         when(productRepository.findWithCategoryById(10L)).thenReturn(Optional.of(product));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(List.of(1L))).thenReturn(List.of(category));
         when(productRepository.save(product)).thenReturn(product);
 
         ProductDto result = productService.update(10L, req);
@@ -140,7 +139,7 @@ class ProductServiceImplTest {
         UpdateProductRequest req = new UpdateProductRequest();
         req.setName("X");
         req.setPrice(BigDecimal.ONE);
-        req.setCategoryId(1L);
+        req.setCategoryIds(List.of(1L));
 
         when(productRepository.findWithCategoryById(99L)).thenReturn(Optional.empty());
 
@@ -185,7 +184,6 @@ class ProductServiceImplTest {
 
     @Test
     void restore_activeProduct_throwsNotFoundException() {
-        // findByIdAndActiveFalse returns empty when product is active
         when(productRepository.findByIdAndActiveFalse(10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> productService.restore(10L))
@@ -206,28 +204,34 @@ class ProductServiceImplTest {
     // ── getProducts (full-text search) ────────────────────────────────────────────
 
     @Test
-    void getProducts_withSearchQuery_callsSearchActive() {
+    void getProducts_withSearchQuery_callsSearchActiveIds() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.searchActive(eq("uzuk"), eq("%uzuk%"), eq(pageable)))
-                .thenReturn(new PageImpl<>(List.of(product)));
+        when(productRepository.searchActiveIds(eq("uzuk"), eq("%uzuk%"), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
 
         PageResponse<ProductDto> result = productService.getProducts(null, "uzuk", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).searchActive("uzuk", "%uzuk%", pageable);
+        verify(productRepository).searchActiveIds("uzuk", "%uzuk%", pageable);
+        verify(productRepository).findByIdsWithDetails(List.of(10L));
         verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
     }
 
     @Test
-    void getProducts_withSearchAndCategory_callsSearchActiveByCategory() {
+    void getProducts_withSearchAndCategory_callsSearchActiveByCategoryIds() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.searchActiveByCategory(eq("uzuk"), eq("%uzuk%"), eq(1L), eq(pageable)))
-                .thenReturn(new PageImpl<>(List.of(product)));
+        when(productRepository.searchActiveByCategoryIds(eq("uzuk"), eq("%uzuk%"), eq(1L), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
 
         PageResponse<ProductDto> result = productService.getProducts(1L, "uzuk", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).searchActiveByCategory("uzuk", "%uzuk%", 1L, pageable);
+        verify(productRepository).searchActiveByCategoryIds("uzuk", "%uzuk%", 1L, pageable);
+        verify(productRepository).findByIdsWithDetails(List.of(10L));
     }
 
     @Test
@@ -240,7 +244,7 @@ class ProductServiceImplTest {
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
-        verify(productRepository, never()).searchActive(any(), any(), any());
+        verify(productRepository, never()).searchActiveIds(any(), any(), any());
     }
 
     @Test
@@ -255,14 +259,17 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void getProducts_categoryOnly_callsFindByCategory() {
+    void getProducts_categoryOnly_callsFindIdsByCategoryActive() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.findByCategoryIdAndActiveTrueOrderByIdDesc(1L, pageable))
-                .thenReturn(new PageImpl<>(List.of(product)));
+        when(productRepository.findIdsByCategoryActive(eq(1L), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
 
         productService.getProducts(1L, null, pageable);
 
-        verify(productRepository).findByCategoryIdAndActiveTrueOrderByIdDesc(1L, pageable);
-        verify(productRepository, never()).searchActive(any(), any(), any());
+        verify(productRepository).findIdsByCategoryActive(1L, pageable);
+        verify(productRepository).findByIdsWithDetails(List.of(10L));
+        verify(productRepository, never()).searchActiveIds(any(), any(), any());
     }
 }

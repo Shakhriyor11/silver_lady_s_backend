@@ -8,6 +8,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreateCategoryRequest {
+
     @NotBlank @Size(max = 80)
     private String name;
+
+    @Size(max = 80) private String nameUz;
+    @Size(max = 80) private String nameRu;
+    @Size(max = 80) private String nameEn;
 }

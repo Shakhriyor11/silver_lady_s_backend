@@ -23,38 +23,43 @@ public class AboutServiceImpl implements AboutService {
     @Transactional(readOnly = true)
     @Cacheable(CacheConfig.CACHE_ABOUT)
     public AboutResponse getAboutInfo() {
-        AboutUs aboutUs = aboutUsRepository.findTopByOrderByIdAsc()
+        AboutUs a = aboutUsRepository.findTopByOrderByIdAsc()
                 .orElseThrow(() -> new NotFoundException("About info not found"));
-        return toResponse(aboutUs);
+        return AboutResponse.from(a);
     }
 
     @Override
     @Transactional
     @CacheEvict(value = CacheConfig.CACHE_ABOUT, allEntries = true)
     public AboutResponse update(AboutUpdateRequest dto) {
-        AboutUs aboutUs = aboutUsRepository.findTopByOrderByIdAsc()
+        AboutUs a = aboutUsRepository.findTopByOrderByIdAsc()
                 .orElseThrow(() -> new NotFoundException("About info not found"));
 
-        aboutUs.setShopName(dto.getShopName().trim());
-        aboutUs.setAddress(dto.getAddress().trim());
-        aboutUs.setPhone(dto.getPhone().trim());
-        aboutUs.setEmail(dto.getEmail() == null ? null : dto.getEmail().trim());
-        aboutUs.setLocationLink(dto.getLocationLink() == null ? null : dto.getLocationLink().trim());
-        aboutUs.setWorkingHours(dto.getWorkingHours().trim());
-        aboutUs.setDescription(dto.getDescription());
+        a.setShopName(dto.getShopName().trim());
+        a.setShopNameUz(dto.getShopNameUz());
+        a.setShopNameRu(dto.getShopNameRu());
+        a.setShopNameEn(dto.getShopNameEn());
 
-        return toResponse(aboutUsRepository.save(aboutUs));
-    }
+        a.setAddress(dto.getAddress().trim());
+        a.setAddressUz(dto.getAddressUz());
+        a.setAddressRu(dto.getAddressRu());
+        a.setAddressEn(dto.getAddressEn());
 
-    private AboutResponse toResponse(AboutUs a) {
-        return new AboutResponse(
-                a.getShopName(),
-                a.getAddress(),
-                a.getPhone(),
-                a.getEmail(),
-                a.getWorkingHours(),
-                a.getLocationLink(),
-                a.getDescription()
-        );
+        a.setPhone(dto.getPhone().trim());
+        a.setEmail(dto.getEmail() == null ? null : dto.getEmail().trim());
+
+        a.setWorkingHours(dto.getWorkingHours().trim());
+        a.setWorkingHoursUz(dto.getWorkingHoursUz());
+        a.setWorkingHoursRu(dto.getWorkingHoursRu());
+        a.setWorkingHoursEn(dto.getWorkingHoursEn());
+
+        a.setLocationLink(dto.getLocationLink() == null ? null : dto.getLocationLink().trim());
+
+        a.setDescription(dto.getDescription());
+        a.setDescriptionUz(dto.getDescriptionUz());
+        a.setDescriptionRu(dto.getDescriptionRu());
+        a.setDescriptionEn(dto.getDescriptionEn());
+
+        return AboutResponse.from(aboutUsRepository.save(a));
     }
 }

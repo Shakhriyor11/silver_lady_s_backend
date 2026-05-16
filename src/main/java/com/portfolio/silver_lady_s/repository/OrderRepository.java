@@ -13,17 +13,17 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    @EntityGraph(attributePaths = "items")
+    @EntityGraph(attributePaths = {"user", "items"})
     Page<Order> findByUserId(Long userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"items"})
+    @EntityGraph(attributePaths = {"user", "items"})
     Optional<Order> findByIdAndUserId(Long id, Long userId);
 
     // Admin: 2-query pattern to avoid pagination-in-memory with collection JOIN FETCH
     @Query("SELECT o.id FROM Order o")
     Page<Long> findAllIds(Pageable pageable);
 
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.product WHERE o.id IN :ids")
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.user LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.product WHERE o.id IN :ids")
     List<Order> findAllWithItemsByIds(@Param("ids") List<Long> ids);
 
     @EntityGraph(attributePaths = {"user", "items"})
