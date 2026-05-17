@@ -35,27 +35,22 @@ public class ProductController {
     public PageResponse<ProductDto> getProducts(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0")  @Min(0)          int page,
+            @RequestParam(defaultValue = "0")  @Min(0)         int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return productService.getProducts(categoryId, search, pageable);
     }
 
-    @GetMapping("/archived")
-    @PreAuthorize("hasRole('ADMIN')")
-    public PageResponse<ProductDto> getArchived(
-            @RequestParam(defaultValue = "0")  @Min(0)          int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
-    ) {
-        return productService.getArchivedProducts(PageRequest.of(page, size));
-    }
-
     @GetMapping("/{id}")
     public ProductDto getById(@PathVariable Long id, Authentication authentication) {
         ProductDto dto = productService.getById(id);
         if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal up) {
-            productViewService.recordView(up.getUserId(), id);
+            try {
+                productViewService.recordView(up.getUserId(), id);
+            } catch (Exception ignored) {
+                // view tracking xatosi asosiy so'rovni to'xtatmasin
+            }
         }
         return dto;
     }

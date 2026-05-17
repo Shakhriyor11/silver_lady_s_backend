@@ -62,7 +62,6 @@ public class SecurityConfig {
                         // public
                         .requestMatchers("/api/auth/logout-all").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/telegram/webhook").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
@@ -70,28 +69,24 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/*/similar").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/carousel").permitAll()
 
                         // authenticated users
                         .requestMatchers("/api/cart/**").authenticated()
                         .requestMatchers("/api/users/me").authenticated()
                         .requestMatchers("/api/recommendations/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/contact").authenticated()
-                        .requestMatchers(HttpMethod.GET,  "/api/contact/mine").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
                         .requestMatchers("/api/orders/my/**").authenticated()
 
                         // admin only
-                        .requestMatchers(HttpMethod.GET,   "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,   "/api/orders").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,   "/api/orders/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.PUT,  "/api/about").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET,  "/api/contact").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET,  "/api/contact/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH,"/api/contact/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/contact/admin/send").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/about").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,   "/api/contact").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,   "/api/contact/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/contact/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")

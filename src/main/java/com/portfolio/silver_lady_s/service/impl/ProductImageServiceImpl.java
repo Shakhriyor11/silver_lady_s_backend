@@ -35,10 +35,6 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     @Transactional
     public List<ProductImageDto> addImages(Long productId, List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) {
-            throw new BadRequestException("At least one file is required");
-        }
-
         Product product = findProduct(productId);
 
         int current = productImageRepository.countByProductId(productId);
@@ -49,32 +45,25 @@ public class ProductImageServiceImpl implements ProductImageService {
         }
 
         boolean isFirstImage = current == 0;
-        List<String> storedUrls = new ArrayList<>();
+        List<ProductImage> saved = new ArrayList<>();
 
-        try {
-            for (MultipartFile file : files) {
-                storedUrls.add(mediaStorageService.store(file, productId));
-            }
+        for (int i = 0; i < files.size(); i++) {
+            String url = mediaStorageService.store(files.get(i), productId);
 
-            List<ProductImage> toSave = new ArrayList<>();
-            for (int i = 0; i < files.size(); i++) {
-                ProductImage img = new ProductImage();
-                img.setProduct(product);
-                img.setUrl(storedUrls.get(i));
-                img.setOriginalFilename(files.get(i).getOriginalFilename());
-                img.setFileSize(files.get(i).getSize());
-                img.setContentType(files.get(i).getContentType());
-                img.setDisplayOrder(current + i);
-                img.setPrimary(isFirstImage && i == 0);
-                toSave.add(img);
-            }
+            ProductImage img = new ProductImage();
+            img.setProduct(product);
+            img.setUrl(url);
+            img.setOriginalFilename(files.get(i).getOriginalFilename());
+            img.setFileSize(files.get(i).getSize());
+            img.setContentType(files.get(i).getContentType());
+            img.setDisplayOrder(current + i);
+            // Birinchi yuklangan rasm avtomatik primary bo'ladi
+            img.setPrimary(isFirstImage && i == 0);
 
-            return productImageRepository.saveAll(toSave).stream()
-                    .map(ProductImageDto::from).toList();
-        } catch (Exception e) {
-            storedUrls.forEach(mediaStorageService::delete);
-            throw e;
+            saved.add(productImageRepository.save(img));
         }
+
+        return saved.stream().map(ProductImageDto::from).toList();
     }
 
     @Override
@@ -119,14 +108,10 @@ public class ProductImageServiceImpl implements ProductImageService {
         List<ProductImage> images =
                 productImageRepository.findByProductIdOrderByDisplayOrderAscIdAsc(productId);
 
-        if (orderedIds.size() != images.size()) {
-            throw new BadRequestException(
-                    "orderedIds must contain all " + images.size() + " image(s) for this product");
-        }
-
         Map<Long, ProductImage> imageMap = images.stream()
                 .collect(Collectors.toMap(ProductImage::getId, Function.identity()));
 
+        // Faqat ushbu mahsulotga tegishli ID larni qabul qilamiz
         for (int i = 0; i < orderedIds.size(); i++) {
             Long id = orderedIds.get(i);
             ProductImage img = imageMap.get(id);

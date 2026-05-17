@@ -12,13 +12,10 @@ public class ContactResponse {
     private Long userId;
     private String userFullName;
     private String userEmail;
-    private Long productId;
-    private String productName;
+    private Long productId;       // null bo'lishi mumkin
+    private String productName;   // null bo'lishi mumkin
     private String subject;
     private String message;
     private boolean read;
-    private boolean adminInitiated;
-    private String adminReply;
-    private Instant repliedAt;
     private Instant createdAt;
 }

@@ -2,7 +2,7 @@ name: CI / Deploy to Production
 
 on:
   push:
-    branches: [prod]
+    branches: [master]
 
 jobs:
   # ── 1. Unit testlar ─────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ jobs:
             cd ${{ secrets.APP_DIR }}
 
             echo "Kod yangilanmoqda..."
-            git pull origin prod
+            git pull origin master
 
             echo "App image qurilmoqda..."
             docker compose -f docker-compose.prod.yaml build --no-cache app

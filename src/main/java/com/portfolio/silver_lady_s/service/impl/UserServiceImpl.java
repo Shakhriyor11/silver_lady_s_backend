@@ -9,8 +9,6 @@ import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,13 +52,6 @@ public class UserServiceImpl implements UserService {
 
         u.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
         userRepository.save(u);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<UserProfileResponse> listUsers(String q, Pageable pageable) {
-        return userRepository.searchRegularUsers(q == null ? "" : q.trim(), pageable)
-                .map(this::toResponse);
     }
 
     private UserProfileResponse toResponse(User u) {

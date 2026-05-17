@@ -47,7 +47,7 @@ class OrderServiceImplTest {
         product.setId(10L);
         product.setName("Oltin uzuk");
         product.setPrice(new BigDecimal("150000.00"));
-        product.getCategories().add(category);
+        product.setCategory(category);
         product.setActive(true);
 
         user = new User();

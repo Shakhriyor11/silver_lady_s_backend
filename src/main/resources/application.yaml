@@ -32,18 +32,6 @@ spring:
       max-file-size: ${MEDIA_MAX_FILE_SIZE:10MB}
       max-request-size: ${MEDIA_MAX_REQUEST_SIZE:50MB}
 
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
   jackson:
     default-property-inclusion: non_null
     serialization:
@@ -79,35 +67,11 @@ app:
   recommendation:
     max-viewed-ids: ${RECOMMENDATION_MAX_VIEWED_IDS:200}
 
-  product-view:
-    retention-days: ${PRODUCT_VIEW_RETENTION_DAYS:180}
-
   media:
     upload-dir: ${MEDIA_UPLOAD_DIR:uploads}
     base-url: ${MEDIA_BASE_URL:http://localhost:8080}
     max-file-size-mb: ${MEDIA_MAX_FILE_SIZE_MB:10}
     max-images-per-product: ${MEDIA_MAX_IMAGES_PER_PRODUCT:10}
-
-  email:
-    from: ${MAIL_FROM:noreply@silverladys.uz}
-    from-name: ${MAIL_FROM_NAME:Silver Lady's}
-    enabled: ${MAIL_ENABLED:false}
-
-  sms:
-    eskiz:
-      email: ${ESKIZ_EMAIL:}
-      password: ${ESKIZ_PASSWORD:}
-      sender-id: ${ESKIZ_SENDER_ID:4546}
-      enabled: ${SMS_ENABLED:false}
-
-  otp:
-    ttl-minutes: ${OTP_TTL_MINUTES:5}
-
-  telegram:
-    bot-token: ${TELEGRAM_BOT_TOKEN:}
-    bot-username: ${TELEGRAM_BOT_USERNAME:}
-    webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
-    enabled: ${TELEGRAM_ENABLED:false}
 
   bootstrap:
     admin:

@@ -11,6 +11,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class AboutUs extends BaseTimeEntity {
+@Getter
+@Setter
+@NoArgsConstructor
+public class AboutUs {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

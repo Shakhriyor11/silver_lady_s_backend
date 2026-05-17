@@ -50,17 +50,6 @@ public class ContactMessage {
     @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
-    /** true bo'lsa admin birinchi bo'lib yozgan (user emas) */
-    @Column(name = "admin_initiated", nullable = false, columnDefinition = "boolean not null default false")
-    private boolean adminInitiated = false;
-
-    /** Admin javobi (ixtiyoriy) */
-    @Column(name = "admin_reply", columnDefinition = "TEXT")
-    private String adminReply;
-
-    @Column(name = "replied_at")
-    private Instant repliedAt;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

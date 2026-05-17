@@ -85,6 +85,7 @@ class CategoryServiceImplTest {
         req.setName("Uzuklar");
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        // findByNameIgnoreCase returns same category — should NOT throw
         when(categoryRepository.findByNameIgnoreCase("Uzuklar")).thenReturn(Optional.of(existing));
         when(categoryRepository.save(existing)).thenReturn(existing);
 
@@ -122,10 +123,10 @@ class CategoryServiceImplTest {
     // ── delete ───────────────────────────────────────────────────────────────────
 
     @Test
-    void delete_noProducts_deletesCategory() {
+    void delete_noActiveProducts_deletesCategory() {
         Category c = makeCategory(1L, "Uzuklar");
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(c));
-        when(productRepository.existsByCategoriesId(1L)).thenReturn(false);
+        when(productRepository.existsByCategoryIdAndActiveTrue(1L)).thenReturn(false);
 
         categoryService.delete(1L);
 
@@ -133,14 +134,14 @@ class CategoryServiceImplTest {
     }
 
     @Test
-    void delete_hasProducts_throwsConflict() {
+    void delete_hasActiveProducts_throwsConflict() {
         Category c = makeCategory(1L, "Uzuklar");
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(c));
-        when(productRepository.existsByCategoriesId(1L)).thenReturn(true);
+        when(productRepository.existsByCategoryIdAndActiveTrue(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> categoryService.delete(1L))
                 .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("products are using it");
+                .hasMessageContaining("active products");
 
         verify(categoryRepository, never()).delete(any());
     }

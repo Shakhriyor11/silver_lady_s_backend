@@ -86,6 +86,7 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.deleteByCartId(cart.getId());
     }
 
+    @Transactional
     protected Cart getOrCreateCart(Long userId) {
         return cartRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)
@@ -106,17 +107,14 @@ public class CartServiceImpl implements CartService {
     private CartResponse toResponse(Long cartId) {
         List<CartItemResponse> items = cartItemRepository.findByCartId(cartId).stream().map(ci -> {
             BigDecimal lineTotal = ci.getUnitPrice().multiply(BigDecimal.valueOf(ci.getQuantity()));
-            var firstCat = ci.getProduct().getCategories().stream()
-                    .min(java.util.Comparator.comparing(com.portfolio.silver_lady_s.entity.Category::getId))
-                    .orElse(null);
             return new CartItemResponse(
                     ci.getProduct().getId(),
                     ci.getProduct().getName(),
                     ci.getQuantity(),
                     ci.getUnitPrice(),
                     lineTotal,
-                    firstCat != null ? firstCat.getId() : null,
-                    firstCat != null ? firstCat.getName() : null
+                    ci.getProduct().getCategory().getId(),
+                    ci.getProduct().getCategory().getName()
             );
         }).toList();
 

@@ -52,8 +52,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certbot/certs:/etc/letsencrypt:ro
-      - ./certbot/www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
     restart: always
     networks:
       - backend
@@ -61,6 +61,8 @@ services:
 volumes:
   pgdata:
   uploads:
+  certbot_certs:
+  certbot_www:
 
 networks:
   backend:

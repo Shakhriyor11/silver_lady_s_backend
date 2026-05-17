@@ -17,6 +17,11 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Rasmlarni lokal diskka saqlaydi.
+ * Kelajakda S3/MinIO ga o'tish uchun faqat shu class o'zgartiriladi —
+ * qolgan kod MediaStorageService interface orqali ishlaydi.
+ */
 @Service
 public class LocalMediaStorageService implements MediaStorageService {
 
@@ -41,27 +46,19 @@ public class LocalMediaStorageService implements MediaStorageService {
 
     @Override
     public String store(MultipartFile file, Long productId) {
-        return storeInFolder(file, "products/" + productId);
-    }
-
-    @Override
-    public String storeInFolder(MultipartFile file, String folder) {
         validateFile(file);
+
         String ext = resolveExtension(file.getContentType());
         String filename = UUID.randomUUID() + "." + ext;
-        Path dir = uploadRoot.resolve(folder).normalize();
-
-        if (!dir.startsWith(uploadRoot)) {
-            throw new BadRequestException("Invalid folder path");
-        }
+        Path productDir = uploadRoot.resolve("products").resolve(String.valueOf(productId));
 
         try {
-            Files.createDirectories(dir);
-            Path target = dir.resolve(filename);
+            Files.createDirectories(productDir);
+            Path target = productDir.resolve(filename);
             compressAndSave(file, target);
-            return "/uploads/" + folder + "/" + filename;
+            return "/uploads/products/" + productId + "/" + filename;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to store file in folder: " + folder, e);
+            throw new RuntimeException("Failed to store file: " + file.getOriginalFilename(), e);
         }
     }
 
@@ -70,9 +67,11 @@ public class LocalMediaStorageService implements MediaStorageService {
         if (url == null || !url.startsWith("/uploads/")) {
             return;
         }
+        // /uploads/products/1/abc.jpg → {uploadRoot}/products/1/abc.jpg
         String relative = url.substring("/uploads/".length());
         Path target = uploadRoot.resolve(relative).normalize();
 
+        // Path traversal himoyasi
         if (!target.startsWith(uploadRoot)) {
             log.warn("Suspicious delete path rejected: {}", url);
             return;
@@ -84,7 +83,7 @@ public class LocalMediaStorageService implements MediaStorageService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -99,28 +98,6 @@ public class LocalMediaStorageService implements MediaStorageService {
             throw new BadRequestException(
                     "Unsupported file type: " + contentType + ". Allowed: JPEG, PNG, WebP");
         }
-        byte[] header = new byte[12];
-        try (InputStream is = file.getInputStream()) {
-            int read = is.read(header);
-            if (read < 3 || !matchesMagicBytes(header, contentType)) {
-                throw new BadRequestException(
-                        "File content does not match declared type: " + contentType);
-            }
-        } catch (BadRequestException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new BadRequestException("Could not read file for validation");
-        }
-    }
-
-    private boolean matchesMagicBytes(byte[] h, String contentType) {
-        return switch (contentType) {
-            case "image/jpeg" -> h[0] == (byte) 0xFF && h[1] == (byte) 0xD8 && h[2] == (byte) 0xFF;
-            case "image/png"  -> h[0] == (byte) 0x89 && h[1] == 0x50 && h[2] == 0x4E && h[3] == 0x47;
-            case "image/webp" -> h[0] == 0x52 && h[1] == 0x49 && h[2] == 0x46 && h[3] == 0x46
-                                 && h[8] == 0x57 && h[9] == 0x45 && h[10] == 0x42 && h[11] == 0x50;
-            default -> false;
-        };
     }
 
     private void compressAndSave(MultipartFile file, Path target) throws IOException {
@@ -128,6 +105,8 @@ public class LocalMediaStorageService implements MediaStorageService {
             Thumbnails.of(in)
                     .size(MAX_DIMENSION, MAX_DIMENSION)
                     .keepAspectRatio(true)
+                    // 1920px dan kichik rasmlarni kattalashtirmaydi
+                    .allowOverwrite(false)
                     .outputQuality(0.85)
                     .toFile(target.toFile());
         }

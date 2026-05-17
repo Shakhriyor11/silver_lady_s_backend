@@ -1,12 +1,14 @@
 package com.portfolio.silver_lady_s.service.impl;
 
+import com.portfolio.silver_lady_s.entity.Product;
 import com.portfolio.silver_lady_s.entity.ProductView;
+import com.portfolio.silver_lady_s.entity.User;
+import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.repository.ProductViewRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.service.ProductViewService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,6 @@ public class ProductViewServiceImpl implements ProductViewService {
      * xato yuz bersa controller uni e'tiborsiz qoldiradi.
      */
     @Override
-    @Async
     @Transactional
     public void recordView(Long userId, Long productId) {
         productViewRepository
@@ -43,9 +44,14 @@ public class ProductViewServiceImpl implements ProductViewService {
                             productViewRepository.save(existing);
                         },
                         () -> {
+                            User user = userRepository.findById(userId)
+                                    .orElseThrow(() -> new NotFoundException("User not found: id=" + userId));
+                            Product product = productRepository.findById(productId)
+                                    .orElseThrow(() -> new NotFoundException("Product not found: id=" + productId));
+
                             ProductView pv = new ProductView();
-                            pv.setUser(userRepository.getReferenceById(userId));
-                            pv.setProduct(productRepository.getReferenceById(productId));
+                            pv.setUser(user);
+                            pv.setProduct(product);
                             pv.setViewCount(1);
                             productViewRepository.save(pv);
                         }

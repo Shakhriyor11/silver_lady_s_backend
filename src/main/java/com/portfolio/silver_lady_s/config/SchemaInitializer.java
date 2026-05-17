@@ -20,15 +20,6 @@ public class SchemaInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        // ── Missing columns (DDL auto can't add NOT NULL without DEFAULT) ────────
-        runSafe("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN NOT NULL DEFAULT FALSE");
-        runSafe("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp VARCHAR(6)");
-        runSafe("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_expires_at TIMESTAMP WITH TIME ZONE");
-
-        runSafe("ALTER TABLE about_us ADD COLUMN IF NOT EXISTS created_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT NOW()");
-        runSafe("ALTER TABLE about_us ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT NOW()");
-
-        // ── pg_trgm full-text search indexes ─────────────────────────────────────
         try {
             jdbc.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm");
 
@@ -46,14 +37,6 @@ public class SchemaInitializer implements ApplicationRunner {
         } catch (Exception e) {
             // Test muhitida yoki pg_trgm mavjud bo'lmasa ilovani to'xtatmasin
             log.warn("Could not initialize pg_trgm indexes: {}", e.getMessage());
-        }
-    }
-
-    private void runSafe(String sql) {
-        try {
-            jdbc.execute(sql);
-        } catch (Exception e) {
-            log.warn("Schema migration skipped: {} — {}", sql.split(" ")[5], e.getMessage());
         }
     }
 }

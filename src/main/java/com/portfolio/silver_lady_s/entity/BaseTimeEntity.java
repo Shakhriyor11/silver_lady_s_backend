@@ -18,12 +18,10 @@ import java.time.Instant;
 public abstract class BaseTimeEntity {
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false,
-            columnDefinition = "timestamp(6) with time zone not null default now()")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false,
-            columnDefinition = "timestamp(6) with time zone not null default now()")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 }
