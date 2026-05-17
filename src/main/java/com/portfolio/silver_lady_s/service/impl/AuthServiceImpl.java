@@ -14,7 +14,9 @@ import com.portfolio.silver_lady_s.repository.RefreshTokenRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.security.JwtService;
 import com.portfolio.silver_lady_s.service.AuthService;
+import com.portfolio.silver_lady_s.service.EmailService;
 import com.portfolio.silver_lady_s.service.SmsService;
+import com.portfolio.silver_lady_s.service.TelegramService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final SmsService smsService;
+    private final EmailService emailService;
+    private final TelegramService telegramService;
 
     @Value("${app.jwt.refresh-token-days:30}")
     private long refreshTokenDays;
@@ -63,7 +67,13 @@ public class AuthServiceImpl implements AuthService {
         u.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         u.setRole(UserRole.USER);
 
+        if (telegramService.isEnabled()) {
+            u.setTelegramLinkToken(UUID.randomUUID().toString());
+        }
+
         User saved = userRepository.save(u);
+
+        trySendOtpEmail(saved);
 
         if (saved.getPhone() != null) {
             trySendOtp(saved);
@@ -127,6 +137,75 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+    public void sendOtpEmail(String email) {
+        User user = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase())
+                .orElseThrow(() -> new NotFoundException("No user found with email: " + email));
+        trySendOtpEmail(user);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void linkTelegramAndSendOtp(Long chatId, String linkToken) {
+        User user = userRepository.findByTelegramLinkToken(linkToken)
+                .orElseGet(() -> {
+                    telegramService.sendMessage(chatId,
+                            "Havolani tanib bo'lmadi. Iltimos, qaytadan ro'yxatdan o'ting.");
+                    return null;
+                });
+        if (user == null) return;
+
+        user.setTelegramChatId(chatId);
+        String code = generateOtp();
+        user.setTelegramOtp(code);
+        user.setTelegramOtpExpiresAt(Instant.now().plus(otpTtlMinutes, ChronoUnit.MINUTES));
+        userRepository.save(user);
+
+        telegramService.sendMessage(chatId,
+                "Silver Lady's — tasdiqlash kodi: " + code +
+                "\n" + otpTtlMinutes + " daqiqa ichida saytga kiriting.");
+    }
+
+    @Override
+    @Transactional
+    public void verifyOtpTelegram(String email, String otp) {
+        User user = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase())
+                .orElseThrow(() -> new NotFoundException("No user found with email: " + email));
+
+        if (user.getTelegramOtp() == null || !user.getTelegramOtp().equals(otp.trim())) {
+            throw new BadRequestException("Invalid OTP code");
+        }
+        if (user.getTelegramOtpExpiresAt() == null || Instant.now().isAfter(user.getTelegramOtpExpiresAt())) {
+            throw new BadRequestException("OTP expired. Request a new one.");
+        }
+
+        user.setTelegramVerified(true);
+        user.setTelegramOtp(null);
+        user.setTelegramOtpExpiresAt(null);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void verifyOtpEmail(String email, String otp) {
+        User user = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase())
+                .orElseThrow(() -> new NotFoundException("No user found with email: " + email));
+
+        if (user.getEmailOtp() == null || !user.getEmailOtp().equals(otp.trim())) {
+            throw new BadRequestException("Invalid OTP code");
+        }
+        if (user.getEmailOtpExpiresAt() == null || Instant.now().isAfter(user.getEmailOtpExpiresAt())) {
+            throw new BadRequestException("OTP expired. Request a new one.");
+        }
+
+        user.setEmailVerified(true);
+        user.setEmailOtp(null);
+        user.setEmailOtpExpiresAt(null);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
     public void sendOtp(String phone) {
         String normalized = normalizePhone(phone);
         User user = userRepository.findByPhone(normalized)
@@ -156,6 +235,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+
+    private void trySendOtpEmail(User user) {
+        String code = generateOtp();
+        user.setEmailOtp(code);
+        user.setEmailOtpExpiresAt(Instant.now().plus(otpTtlMinutes, ChronoUnit.MINUTES));
+        try {
+            emailService.sendOtpEmail(user.getEmail(), user.getFullName(), code, otpTtlMinutes);
+        } catch (Exception e) {
+            log.warn("Could not send OTP email to {}: {}", user.getEmail(), e.getMessage());
+        }
+    }
 
     private void trySendOtp(User user) {
         String code = generateOtp();
@@ -188,6 +278,15 @@ public class AuthServiceImpl implements AuthService {
         rt.setUser(user);
         rt.setExpiresAt(Instant.now().plus(refreshTokenDays, ChronoUnit.DAYS));
         refreshTokenRepository.save(rt);
-        return new AuthResponse(accessToken, rt.getToken());
+
+        String telegramBotUrl = (user.getTelegramLinkToken() != null)
+                ? telegramService.getBotUrl(user.getTelegramLinkToken())
+                : null;
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(rt.getToken())
+                .telegramBotUrl(telegramBotUrl)
+                .build();
     }
 }

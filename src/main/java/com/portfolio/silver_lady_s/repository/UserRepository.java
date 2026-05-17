@@ -15,6 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmailIgnoreCase(String email);
     boolean existsByRole(UserRole userRole);
     Optional<User> findByPhone(String phone);
+    Optional<User> findByTelegramLinkToken(String token);
 
     @Query("""
             SELECT u FROM User u

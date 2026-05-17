@@ -19,4 +19,12 @@ public interface AuthService {
     void sendOtp(String phone);
 
     void verifyOtp(String phone, String otp);
+
+    void sendOtpEmail(String email);
+
+    void verifyOtpEmail(String email, String otp);
+
+    void linkTelegramAndSendOtp(Long chatId, String linkToken);
+
+    void verifyOtpTelegram(String email, String otp);
 }

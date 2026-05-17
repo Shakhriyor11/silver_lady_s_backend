@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    # Testcontainers @ServiceConnection url/username/password ni override qiladi.
+    # password uchun har qanday qiymat yozilsa bo'ladi — TC uni almashtiradi.
+    # Lekin Spring ${DB_PASSWORD} ni application.yaml dan o'qib property binding
+    # amalga oshirishi uchun bu yerda override talab qilinadi.
+    password: testcontainers-placeholder
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+app:
+  jwt:
+    secret: test-integration-secret-key-that-is-at-least-64-characters-long-xxxx
+    issuer: test
+    access-token-minutes: 60
+    refresh-token-days: 7
+  cors:
+    allowed-origins: http://localhost:3000
+  media:
+    upload-dir: /tmp/silver-test-uploads
+    base-url: http://localhost:8080
+    max-file-size-mb: 10
+    max-images-per-product: 10
+  bootstrap:
+    admin:
+      enabled: false
+      email: ""
+      password: ""
+      full-name: ""
+  recommendation:
+    max-viewed-ids: 50
+  rate-limit:
+    enabled: false
