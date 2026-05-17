@@ -39,11 +39,35 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "boolean not null default false")
     private boolean phoneVerified = false;
 
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean emailVerified = false;
+
     @Column(length = 6)
     private String otp;
 
     @Column(name = "otp_expires_at")
     private Instant otpExpiresAt;
+
+    @Column(name = "email_otp", length = 6)
+    private String emailOtp;
+
+    @Column(name = "email_otp_expires_at")
+    private Instant emailOtpExpiresAt;
+
+    @Column(name = "telegram_chat_id")
+    private Long telegramChatId;
+
+    @Column(name = "telegram_link_token", length = 36)
+    private String telegramLinkToken;
+
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean telegramVerified = false;
+
+    @Column(name = "telegram_otp", length = 6)
+    private String telegramOtp;
+
+    @Column(name = "telegram_otp_expires_at")
+    private Instant telegramOtpExpiresAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)

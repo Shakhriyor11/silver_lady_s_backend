@@ -28,6 +28,7 @@ services:
       - .env
     environment:
       DB_URL: jdbc:postgresql://db:5432/silver_lady_s_db
+      SPRING_PROFILES_ACTIVE: prod
     volumes:
       - uploads:/app/uploads
     restart: always

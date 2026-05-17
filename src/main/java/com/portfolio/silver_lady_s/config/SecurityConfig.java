@@ -62,6 +62,7 @@ public class SecurityConfig {
                         // public
                         .requestMatchers("/api/auth/logout-all").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/telegram/webhook").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
