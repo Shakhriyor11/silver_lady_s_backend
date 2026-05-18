@@ -94,6 +94,37 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid credentials");
         }
 
+        if (telegramService.isEnabled() && u.getTelegramChatId() != null) {
+            String code = generateOtp();
+            u.setTelegramOtp(code);
+            u.setTelegramOtpExpiresAt(Instant.now().plus(otpTtlMinutes, ChronoUnit.MINUTES));
+            userRepository.save(u);
+            telegramService.sendMessage(u.getTelegramChatId(),
+                    "Silver Lady's — kirish kodi: " + code +
+                    "\n" + otpTtlMinutes + " daqiqa ichida saytga kiriting.");
+            return AuthResponse.builder().otpRequired(true).build();
+        }
+
+        return buildAuthResponse(u);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse loginVerifyOtp(String email, String otp) {
+        User u = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase())
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
+
+        if (u.getTelegramOtp() == null || !u.getTelegramOtp().equals(otp.trim())) {
+            throw new BadRequestException("Invalid OTP code");
+        }
+        if (u.getTelegramOtpExpiresAt() == null || Instant.now().isAfter(u.getTelegramOtpExpiresAt())) {
+            throw new BadRequestException("OTP expired. Request a new one.");
+        }
+
+        u.setTelegramOtp(null);
+        u.setTelegramOtpExpiresAt(null);
+        userRepository.save(u);
+
         return buildAuthResponse(u);
     }
 

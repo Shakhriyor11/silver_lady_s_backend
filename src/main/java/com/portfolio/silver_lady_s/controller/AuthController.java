@@ -79,6 +79,11 @@ public class AuthController {
     public void verifyOtpTelegram(@Valid @RequestBody VerifyEmailOtpRequest req) {
         authService.verifyOtpTelegram(req.getEmail(), req.getOtp());
     }
+
+    @PostMapping("/login-verify-otp")
+    public AuthResponse loginVerifyOtp(@Valid @RequestBody VerifyEmailOtpRequest req) {
+        return authService.loginVerifyOtp(req.getEmail(), req.getOtp());
+    }
 }
 
 

@@ -27,4 +27,6 @@ public interface AuthService {
     void linkTelegramAndSendOtp(Long chatId, String linkToken);
 
     void verifyOtpTelegram(String email, String otp);
+
+    AuthResponse loginVerifyOtp(String email, String otp);
 }
