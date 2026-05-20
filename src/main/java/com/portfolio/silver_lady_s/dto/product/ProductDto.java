@@ -24,6 +24,7 @@ public class ProductDto {
     private String descriptionUz;
     private String descriptionRu;
     private String descriptionEn;
+    private int stockQuantity;
     private BigDecimal price;
     private BigDecimal salePrice;
     private Integer discountPercent;
@@ -31,6 +32,7 @@ public class ProductDto {
     private Instant discountStartsAt;
     private Instant discountEndsAt;
     private List<CategoryInfo> categories;
+    private List<String> availableSizes;
     private boolean active;
     private Instant createdAt;
     private Instant updatedAt;
@@ -56,6 +58,7 @@ public class ProductDto {
                 p.getDescriptionUz(),
                 p.getDescriptionRu(),
                 p.getDescriptionEn(),
+                p.getStockQuantity(),
                 p.getPrice(),
                 computeSalePrice(p),
                 p.getDiscountPercent(),
@@ -63,6 +66,7 @@ public class ProductDto {
                 p.getDiscountStartsAt(),
                 p.getDiscountEndsAt(),
                 cats,
+                new java.util.ArrayList<>(p.getAvailableSizes()),
                 p.isActive(),
                 p.getCreatedAt(),
                 p.getUpdatedAt(),

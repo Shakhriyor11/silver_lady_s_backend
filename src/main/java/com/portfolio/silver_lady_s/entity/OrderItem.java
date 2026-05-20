@@ -32,9 +32,12 @@ public class OrderItem {
             foreignKey = @ForeignKey(name = "fk_order_item_product"))
     private Product product;
 
-    // Buyurtma vaqtidagi snapshot — mahsulot o'zgansa ham narx/nom saqlanadi
+    // Buyurtma vaqtidagi snapshot — mahsulot o'zgansa ham narx/nom/o'lcham saqlanadi
     @Column(nullable = false, length = 160)
     private String productName;
+
+    @Column(name = "selected_size", length = 30)
+    private String selectedSize;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal unitPrice;

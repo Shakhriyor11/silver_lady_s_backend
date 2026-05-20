@@ -42,6 +42,9 @@ public class Product extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT") private String descriptionRu;
     @Column(columnDefinition = "TEXT") private String descriptionEn;
 
+    @Column(name = "stock_quantity", nullable = false)
+    private int stockQuantity = 0;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal price;
 
@@ -69,6 +72,16 @@ public class Product extends BaseTimeEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "product_sizes",
+            joinColumns = @JoinColumn(name = "product_id",
+                    foreignKey = @ForeignKey(name = "fk_product_size_product"))
+    )
+    @Column(name = "size", length = 30, nullable = false)
+    @OrderColumn(name = "size_order")
+    private List<String> availableSizes = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL,
                orphanRemoval = true, fetch = FetchType.LAZY)

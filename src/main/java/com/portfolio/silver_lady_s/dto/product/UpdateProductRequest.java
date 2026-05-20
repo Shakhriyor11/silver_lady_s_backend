@@ -26,6 +26,9 @@ public class UpdateProductRequest {
     @Size(max = 10000) private String descriptionRu;
     @Size(max = 10000) private String descriptionEn;
 
+    @Min(0)
+    private Integer stockQuantity;
+
     @NotNull @Positive
     private BigDecimal price;
 
@@ -40,6 +43,9 @@ public class UpdateProductRequest {
 
     @NotEmpty @Size(max = 5)
     private List<Long> categoryIds;
+
+    @Size(max = 20)
+    private List<@NotBlank @Size(max = 30) String> availableSizes;
 
     private Boolean active;
 }

@@ -17,6 +17,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findAllByActiveTrueOrderByIdDesc(Pageable pageable);
 
+    Page<Product> findAllByActiveTrueOrderByPriceAsc(Pageable pageable);
+
+    Page<Product> findAllByActiveTrueOrderByPriceDesc(Pageable pageable);
+
     Page<Product> findAllByActiveFalseOrderByIdDesc(Pageable pageable);
 
     // ── Category-filtered list (two-step: native IDs → JPQL fetch) ───────────
@@ -36,6 +40,38 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             """,
             nativeQuery = true)
     Page<Long> findIdsByCategoryActive(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    @Query(value = """
+            SELECT p.id FROM products p
+            JOIN product_categories pc ON pc.product_id = p.id
+            WHERE p.active = true
+              AND pc.category_id = :categoryId
+            ORDER BY COALESCE(p.sale_price, p.price) ASC
+            """,
+            countQuery = """
+            SELECT count(DISTINCT p.id) FROM products p
+            JOIN product_categories pc ON pc.product_id = p.id
+            WHERE p.active = true
+              AND pc.category_id = :categoryId
+            """,
+            nativeQuery = true)
+    Page<Long> findIdsByCategoryActivePriceAsc(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    @Query(value = """
+            SELECT p.id FROM products p
+            JOIN product_categories pc ON pc.product_id = p.id
+            WHERE p.active = true
+              AND pc.category_id = :categoryId
+            ORDER BY COALESCE(p.sale_price, p.price) DESC
+            """,
+            countQuery = """
+            SELECT count(DISTINCT p.id) FROM products p
+            JOIN product_categories pc ON pc.product_id = p.id
+            WHERE p.active = true
+              AND pc.category_id = :categoryId
+            """,
+            nativeQuery = true)
+    Page<Long> findIdsByCategoryActivePriceDesc(@Param("categoryId") Long categoryId, Pageable pageable);
 
     // ── Full-text search (two-step: native IDs → JPQL fetch) ─────────────────
 
@@ -69,6 +105,58 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Long> searchActiveIds(@Param("query") String query,
                                @Param("pattern") String pattern,
                                Pageable pageable);
+
+    @Query(value = """
+            SELECT p.id FROM products p
+            WHERE p.active = true
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            ORDER BY COALESCE(p.sale_price, p.price) ASC
+            """,
+            countQuery = """
+            SELECT count(*) FROM products p
+            WHERE p.active = true
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            """,
+            nativeQuery = true)
+    Page<Long> searchActiveIdsPriceAsc(@Param("query") String query,
+                                       @Param("pattern") String pattern,
+                                       Pageable pageable);
+
+    @Query(value = """
+            SELECT p.id FROM products p
+            WHERE p.active = true
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            ORDER BY COALESCE(p.sale_price, p.price) DESC
+            """,
+            countQuery = """
+            SELECT count(*) FROM products p
+            WHERE p.active = true
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            """,
+            nativeQuery = true)
+    Page<Long> searchActiveIdsPriceDesc(@Param("query") String query,
+                                        @Param("pattern") String pattern,
+                                        Pageable pageable);
 
     @Query(value = """
             SELECT p.id FROM products p
@@ -109,6 +197,76 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                          @Param("pattern") String pattern,
                                          @Param("categoryId") Long categoryId,
                                          Pageable pageable);
+
+    @Query(value = """
+            SELECT p.id FROM products p
+            WHERE p.active = true
+              AND EXISTS (
+                  SELECT 1 FROM product_categories pc
+                  WHERE pc.product_id = p.id AND pc.category_id = :categoryId
+              )
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            ORDER BY COALESCE(p.sale_price, p.price) ASC
+            """,
+            countQuery = """
+            SELECT count(*) FROM products p
+            WHERE p.active = true
+              AND EXISTS (
+                  SELECT 1 FROM product_categories pc
+                  WHERE pc.product_id = p.id AND pc.category_id = :categoryId
+              )
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            """,
+            nativeQuery = true)
+    Page<Long> searchActiveByCategoryIdsPriceAsc(@Param("query") String query,
+                                                 @Param("pattern") String pattern,
+                                                 @Param("categoryId") Long categoryId,
+                                                 Pageable pageable);
+
+    @Query(value = """
+            SELECT p.id FROM products p
+            WHERE p.active = true
+              AND EXISTS (
+                  SELECT 1 FROM product_categories pc
+                  WHERE pc.product_id = p.id AND pc.category_id = :categoryId
+              )
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            ORDER BY COALESCE(p.sale_price, p.price) DESC
+            """,
+            countQuery = """
+            SELECT count(*) FROM products p
+            WHERE p.active = true
+              AND EXISTS (
+                  SELECT 1 FROM product_categories pc
+                  WHERE pc.product_id = p.id AND pc.category_id = :categoryId
+              )
+              AND (
+                p.name           ILIKE :pattern
+                OR p.description ILIKE :pattern
+                OR word_similarity(:query, p.name)                      > 0.3
+                OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
+              )
+            """,
+            nativeQuery = true)
+    Page<Long> searchActiveByCategoryIdsPriceDesc(@Param("query") String query,
+                                                  @Param("pattern") String pattern,
+                                                  @Param("categoryId") Long categoryId,
+                                                  Pageable pageable);
 
     // ── Step-2 fetch with JOIN FETCH (used after ID pagination) ──────────────
 

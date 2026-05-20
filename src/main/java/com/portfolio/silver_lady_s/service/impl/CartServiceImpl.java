@@ -2,6 +2,7 @@ package com.portfolio.silver_lady_s.service.impl;
 
 import com.portfolio.silver_lady_s.dto.cart.*;
 import com.portfolio.silver_lady_s.entity.*;
+import com.portfolio.silver_lady_s.exception.BadRequestException;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CartItemRepository;
 import com.portfolio.silver_lady_s.repository.CartRepository;
@@ -41,11 +42,15 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findWithCategoryById(req.getProductId())
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + req.getProductId()));
 
-        CartItem item = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId())
+        String size = normalizeSize(req.getSelectedSize());
+        validateSize(product, size);
+
+        CartItem item = cartItemRepository.findByCartIdAndProductIdAndSize(cart.getId(), product.getId(), size)
                 .orElseGet(() -> {
                     CartItem ci = new CartItem();
                     ci.setCart(cart);
                     ci.setProduct(product);
+                    ci.setSelectedSize(size);
                     ci.setQuantity(0);
                     ci.setUnitPrice(product.getPrice());
                     return ci;
@@ -63,8 +68,10 @@ public class CartServiceImpl implements CartService {
     public CartResponse updateItem(Long userId, UpdateCartItemRequest req) {
         Cart cart = getOrCreateCart(userId);
 
-        CartItem item = cartItemRepository.findByCartIdAndProductId(cart.getId(), req.getProductId())
-                .orElseThrow(() -> new NotFoundException("Cart item not found: productId=" + req.getProductId()));
+        String size = normalizeSize(req.getSelectedSize());
+        CartItem item = cartItemRepository.findByCartIdAndProductIdAndSize(cart.getId(), req.getProductId(), size)
+                .orElseThrow(() -> new NotFoundException(
+                        "Cart item not found: productId=" + req.getProductId() + ", size=" + size));
 
         item.setQuantity(req.getQuantity());
         cartItemRepository.save(item);
@@ -74,9 +81,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void removeItem(Long userId, Long productId) {
+    public void removeItem(Long userId, Long productId, String selectedSize) {
         Cart cart = getOrCreateCart(userId);
-        cartItemRepository.deleteByCartIdAndProductId(cart.getId(), productId);
+        cartItemRepository.deleteByCartIdAndProductIdAndSize(cart.getId(), productId, normalizeSize(selectedSize));
     }
 
     @Override
@@ -112,6 +119,7 @@ public class CartServiceImpl implements CartService {
             return new CartItemResponse(
                     ci.getProduct().getId(),
                     ci.getProduct().getName(),
+                    ci.getSelectedSize(),
                     ci.getQuantity(),
                     ci.getUnitPrice(),
                     lineTotal,
@@ -125,5 +133,18 @@ public class CartServiceImpl implements CartService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new CartResponse(items, total);
+    }
+
+    private String normalizeSize(String size) {
+        return (size == null || size.isBlank()) ? null : size.trim();
+    }
+
+    private void validateSize(Product product, String size) {
+        List<String> available = product.getAvailableSizes();
+        if (available.isEmpty()) return;
+        if (size == null || !available.contains(size)) {
+            throw new BadRequestException(
+                    "Invalid size '" + size + "'. Available: " + available);
+        }
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ProductService {
 
-    PageResponse<ProductDto> getProducts(Long categoryId, String search, Pageable pageable);
+    PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort, Pageable pageable);
 
     PageResponse<ProductDto> getArchivedProducts(Pageable pageable);
 
