@@ -211,7 +211,7 @@ class ProductServiceImplTest {
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
 
-        PageResponse<ProductDto> result = productService.getProducts(null, "uzuk", pageable);
+        PageResponse<ProductDto> result = productService.getProducts(null, "uzuk", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).searchActiveIds("uzuk", "%uzuk%", pageable);
@@ -227,7 +227,7 @@ class ProductServiceImplTest {
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
 
-        PageResponse<ProductDto> result = productService.getProducts(1L, "uzuk", pageable);
+        PageResponse<ProductDto> result = productService.getProducts(1L, "uzuk", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).searchActiveByCategoryIds("uzuk", "%uzuk%", 1L, pageable);
@@ -240,7 +240,7 @@ class ProductServiceImplTest {
         when(productRepository.findAllByActiveTrueOrderByIdDesc(pageable))
                 .thenReturn(new PageImpl<>(List.of(product)));
 
-        PageResponse<ProductDto> result = productService.getProducts(null, "", pageable);
+        PageResponse<ProductDto> result = productService.getProducts(null, "", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
@@ -253,7 +253,7 @@ class ProductServiceImplTest {
         when(productRepository.findAllByActiveTrueOrderByIdDesc(pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        productService.getProducts(null, null, pageable);
+        productService.getProducts(null, null, null, pageable);
 
         verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
     }
@@ -266,7 +266,7 @@ class ProductServiceImplTest {
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
 
-        productService.getProducts(1L, null, pageable);
+        productService.getProducts(1L, null, null, pageable);
 
         verify(productRepository).findIdsByCategoryActive(1L, pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
