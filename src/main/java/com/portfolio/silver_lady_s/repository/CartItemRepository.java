@@ -15,11 +15,26 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     @EntityGraph(attributePaths = {"product", "product.categories"})
     List<CartItem> findByCartId(Long cartId);
 
-    Optional<CartItem> findByCartIdAndProductId(Long cartId, Long productId);
+    @Query("""
+            SELECT ci FROM CartItem ci
+            WHERE ci.cart.id = :cartId AND ci.product.id = :productId
+              AND (:size IS NULL AND ci.selectedSize IS NULL OR ci.selectedSize = :size)
+            """)
+    Optional<CartItem> findByCartIdAndProductIdAndSize(
+            @Param("cartId") Long cartId,
+            @Param("productId") Long productId,
+            @Param("size") String size);
 
     @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM CartItem ci WHERE ci.cart.id = :cartId AND ci.product.id = :productId")
-    void deleteByCartIdAndProductId(@Param("cartId") Long cartId, @Param("productId") Long productId);
+    @Query("""
+            DELETE FROM CartItem ci
+            WHERE ci.cart.id = :cartId AND ci.product.id = :productId
+              AND (:size IS NULL AND ci.selectedSize IS NULL OR ci.selectedSize = :size)
+            """)
+    void deleteByCartIdAndProductIdAndSize(
+            @Param("cartId") Long cartId,
+            @Param("productId") Long productId,
+            @Param("size") String size);
 
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM CartItem ci WHERE ci.cart.id = :cartId")

@@ -35,38 +35,27 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductDto> getProducts(Long categoryId, String search, Pageable pageable) {
+    public PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort, Pageable pageable) {
         String q = (search == null) ? null : search.trim();
+        boolean priceAsc  = "price_asc".equals(sort);
+        boolean priceDesc = "price_desc".equals(sort);
 
         if (StringUtils.hasText(q)) {
             String pattern = "%" + q + "%";
-            Page<Long> idPage = (categoryId != null)
-                    ? productRepository.searchActiveByCategoryIds(q, pattern, categoryId, pageable)
-                    : productRepository.searchActiveIds(q, pattern, pageable);
-
-            List<Long> ids = idPage.getContent();
-            if (ids.isEmpty()) {
-                return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
+            Page<Long> idPage;
+            if (categoryId != null) {
+                idPage = priceAsc  ? productRepository.searchActiveByCategoryIdsPriceAsc(q, pattern, categoryId, pageable)
+                       : priceDesc ? productRepository.searchActiveByCategoryIdsPriceDesc(q, pattern, categoryId, pageable)
+                       :             productRepository.searchActiveByCategoryIds(q, pattern, categoryId, pageable);
+            } else {
+                idPage = priceAsc  ? productRepository.searchActiveIdsPriceAsc(q, pattern, pageable)
+                       : priceDesc ? productRepository.searchActiveIdsPriceDesc(q, pattern, pageable)
+                       :             productRepository.searchActiveIds(q, pattern, pageable);
             }
 
-            Map<Long, Product> byId = productRepository.findByIdsWithDetails(ids).stream()
-                    .collect(Collectors.toMap(Product::getId, p -> p));
-
-            List<ProductDto> dtos = ids.stream()
-                    .map(byId::get)
-                    .filter(Objects::nonNull)
-                    .map(ProductDto::from)
-                    .toList();
-
-            return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
-        }
-
-        if (categoryId != null) {
-            Page<Long> idPage = productRepository.findIdsByCategoryActive(categoryId, pageable);
             List<Long> ids = idPage.getContent();
-            if (ids.isEmpty()) {
-                return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
-            }
+            if (ids.isEmpty()) return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
+
             Map<Long, Product> byId = productRepository.findByIdsWithDetails(ids).stream()
                     .collect(Collectors.toMap(Product::getId, p -> p));
             List<ProductDto> dtos = ids.stream()
@@ -74,9 +63,23 @@ public class ProductServiceImpl implements ProductService {
             return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
         }
 
-        // Hamma faol mahsulotlar — kategoriyalar batch-fetch orqali yuklanadi
-        return new PageResponse<>(
-                productRepository.findAllByActiveTrueOrderByIdDesc(pageable).map(ProductDto::from));
+        if (categoryId != null) {
+            Page<Long> idPage = priceAsc  ? productRepository.findIdsByCategoryActivePriceAsc(categoryId, pageable)
+                               : priceDesc ? productRepository.findIdsByCategoryActivePriceDesc(categoryId, pageable)
+                               :             productRepository.findIdsByCategoryActive(categoryId, pageable);
+            List<Long> ids = idPage.getContent();
+            if (ids.isEmpty()) return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
+            Map<Long, Product> byId = productRepository.findByIdsWithDetails(ids).stream()
+                    .collect(Collectors.toMap(Product::getId, p -> p));
+            List<ProductDto> dtos = ids.stream()
+                    .map(byId::get).filter(Objects::nonNull).map(ProductDto::from).toList();
+            return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
+        }
+
+        Page<Product> page = priceAsc  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
+                           : priceDesc ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
+                           :             productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
+        return new PageResponse<>(page.map(ProductDto::from));
     }
 
     @Override
@@ -126,12 +129,17 @@ public class ProductServiceImpl implements ProductService {
         p.setDescriptionUz(req.getDescriptionUz());
         p.setDescriptionRu(req.getDescriptionRu());
         p.setDescriptionEn(req.getDescriptionEn());
+        p.setStockQuantity(req.getStockQuantity() != null ? req.getStockQuantity() : 0);
         p.setPrice(req.getPrice());
         p.setDiscountPercent(req.getDiscountPercent());
         p.setDiscountAmount(req.getDiscountAmount());
         p.setDiscountStartsAt(req.getDiscountStartsAt());
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().addAll(cats);
+        if (req.getAvailableSizes() != null) {
+            p.getAvailableSizes().clear();
+            p.getAvailableSizes().addAll(req.getAvailableSizes());
+        }
         if (req.getActive() != null) p.setActive(req.getActive());
 
         return ProductDto.from(productRepository.save(p));
@@ -153,6 +161,7 @@ public class ProductServiceImpl implements ProductService {
         p.setDescriptionUz(req.getDescriptionUz());
         p.setDescriptionRu(req.getDescriptionRu());
         p.setDescriptionEn(req.getDescriptionEn());
+        if (req.getStockQuantity() != null) p.setStockQuantity(req.getStockQuantity());
         p.setPrice(req.getPrice());
         p.setDiscountPercent(req.getDiscountPercent());
         p.setDiscountAmount(req.getDiscountAmount());
@@ -160,6 +169,10 @@ public class ProductServiceImpl implements ProductService {
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().clear();
         p.getCategories().addAll(cats);
+        if (req.getAvailableSizes() != null) {
+            p.getAvailableSizes().clear();
+            p.getAvailableSizes().addAll(req.getAvailableSizes());
+        }
         if (req.getActive() != null) p.setActive(req.getActive());
 
         return ProductDto.from(productRepository.save(p));

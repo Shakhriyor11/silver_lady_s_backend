@@ -35,11 +35,12 @@ public class ProductController {
     public PageResponse<ProductDto> getProducts(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0")  @Min(0)          int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return productService.getProducts(categoryId, search, pageable);
+        return productService.getProducts(categoryId, search, sort, pageable);
     }
 
     @GetMapping("/archived")

@@ -47,9 +47,15 @@ public class OrderServiceImpl implements OrderService {
         }
 
         for (CartItem ci : cartItems) {
-            if (!ci.getProduct().isActive()) {
+            Product product = ci.getProduct();
+            if (!product.isActive()) {
                 throw new BadRequestException(
-                        "Product is no longer available: " + ci.getProduct().getName());
+                        "Product is no longer available: " + product.getName());
+            }
+            if (product.getStockQuantity() < ci.getQuantity()) {
+                throw new BadRequestException(
+                        "'" + product.getName() + "' mahsulotidan yetarli miqdor yo'q. " +
+                        "Mavjud: " + product.getStockQuantity() + " dona, talab: " + ci.getQuantity() + " dona.");
             }
         }
 
@@ -68,6 +74,7 @@ public class OrderServiceImpl implements OrderService {
             item.setOrder(order);
             item.setProduct(ci.getProduct());
             item.setProductName(ci.getProduct().getName());
+            item.setSelectedSize(ci.getSelectedSize());
             item.setUnitPrice(ci.getUnitPrice());
             item.setQuantity(ci.getQuantity());
             item.setLineTotal(lineTotal);
@@ -78,6 +85,12 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(total);
 
         Order saved = orderRepository.save(order);
+
+        for (CartItem ci : cartItems) {
+            ci.getProduct().setStockQuantity(
+                    ci.getProduct().getStockQuantity() - ci.getQuantity());
+        }
+
         cartItemRepository.deleteByCartId(cart.getId());
 
         return OrderDto.from(saved);
@@ -111,6 +124,12 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        for (OrderItem item : order.getItems()) {
+            if (item.getProduct() != null) {
+                item.getProduct().setStockQuantity(
+                        item.getProduct().getStockQuantity() + item.getQuantity());
+            }
+        }
         return OrderDto.from(orderRepository.save(order));
     }
 
@@ -156,6 +175,14 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(next);
+        if (next == OrderStatus.CANCELLED) {
+            for (OrderItem item : order.getItems()) {
+                if (item.getProduct() != null) {
+                    item.getProduct().setStockQuantity(
+                            item.getProduct().getStockQuantity() + item.getQuantity());
+                }
+            }
+        }
         return OrderDto.from(orderRepository.save(order));
     }
 
