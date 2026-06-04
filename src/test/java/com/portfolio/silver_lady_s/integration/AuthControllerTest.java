@@ -3,7 +3,7 @@ package com.portfolio.silver_lady_s.integration;
 import com.portfolio.silver_lady_s.dto.auth.AuthResponse;
 import com.portfolio.silver_lady_s.dto.auth.LoginRequest;
 import com.portfolio.silver_lady_s.dto.auth.RefreshRequest;
-import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
+import com.portfolio.silver_lady_s.entity.UserRole;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,19 +13,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AuthControllerTest extends AbstractIntegrationTest {
 
-    // ── register ─────────────────────────────────────────────────────────────────
+    // ── login ────────────────────────────────────────────────────────────────────
 
     @Test
-    void register_newUser_returns201WithBothTokens() throws Exception {
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail("ali@example.com");
-        req.setPassword("Secret123");
-        req.setFullName("Ali Valiyev");
+    void login_adminCredentials_returns200WithBothTokens() throws Exception {
+        createUser("admin@example.com", "Secret123", UserRole.ADMIN);
 
-        String body = mockMvc.perform(post("/api/auth/register")
+        LoginRequest req = new LoginRequest();
+        req.setEmail("admin@example.com");
+        req.setPassword("Secret123");
+
+        String body = mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isString())
                 .andExpect(jsonPath("$.refreshToken").isString())
                 .andReturn().getResponse().getContentAsString();
@@ -36,104 +37,28 @@ class AuthControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void register_duplicateEmail_returns409() throws Exception {
-        register("ali@example.com", "Secret123");
-
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail("ali@example.com");
-        req.setPassword("AnotherPass1");
-        req.setFullName("Ali 2");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(APPLICATION_JSON)
-                        .content(toJson(req)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void register_emailCaseInsensitiveDuplicate_returns409() throws Exception {
-        register("ali@example.com", "Secret123");
-
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail("ALI@EXAMPLE.COM");
-        req.setPassword("AnotherPass1");
-        req.setFullName("Ali Upper");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(APPLICATION_JSON)
-                        .content(toJson(req)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void register_shortPassword_returns400() throws Exception {
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail("test@example.com");
-        req.setPassword("12345"); // min 6 char
-        req.setFullName("Test");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(APPLICATION_JSON)
-                        .content(toJson(req)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void register_invalidEmail_returns400() throws Exception {
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail("not-an-email");
-        req.setPassword("Secret123");
-        req.setFullName("Test");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(APPLICATION_JSON)
-                        .content(toJson(req)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void register_missingFullName_returns400() throws Exception {
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail("test@example.com");
-        req.setPassword("Secret123");
-        // fullName set qilinmagan
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(APPLICATION_JSON)
-                        .content(toJson(req)))
-                .andExpect(status().isBadRequest());
-    }
-
-    // ── login ────────────────────────────────────────────────────────────────────
-
-    @Test
-    void login_correctCredentials_returns200WithBothTokens() throws Exception {
-        register("ali@example.com", "Secret123");
+    void login_regularUser_returns401() throws Exception {
+        createUser("user@example.com", "Secret123", UserRole.USER);
 
         LoginRequest req = new LoginRequest();
-        req.setEmail("ali@example.com");
+        req.setEmail("user@example.com");
         req.setPassword("Secret123");
 
-        String body = mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        AuthResponse resp = objectMapper.readValue(body, AuthResponse.class);
-        assertThat(resp.getAccessToken()).isNotBlank();
-        assertThat(resp.getRefreshToken()).isNotBlank();
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void login_wrongPassword_returns401() throws Exception {
-        register("ali@example.com", "Secret123");
+        createUser("admin@example.com", "Secret123", UserRole.ADMIN);
 
         LoginRequest req = new LoginRequest();
-        req.setEmail("ali@example.com");
+        req.setEmail("admin@example.com");
         req.setPassword("WrongPassword");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isUnauthorized());
@@ -145,7 +70,7 @@ class AuthControllerTest extends AbstractIntegrationTest {
         req.setEmail("nobody@example.com");
         req.setPassword("AnyPass123");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isUnauthorized());
@@ -155,12 +80,12 @@ class AuthControllerTest extends AbstractIntegrationTest {
 
     @Test
     void refresh_validToken_returnsNewRotatedTokens() throws Exception {
-        AuthResponse first = register("ali@example.com", "Secret123");
+        AuthResponse first = adminLoginResponse("admin@example.com", "Secret123");
 
         RefreshRequest req = new RefreshRequest();
         req.setRefreshToken(first.getRefreshToken());
 
-        String body = mockMvc.perform(post("/api/auth/refresh")
+        String body = mockMvc.perform(post("/api/admin/auth/refresh")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isOk())
@@ -177,7 +102,7 @@ class AuthControllerTest extends AbstractIntegrationTest {
         RefreshRequest req = new RefreshRequest();
         req.setRefreshToken("totally-invalid-uuid-token");
 
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/admin/auth/refresh")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isUnauthorized());
@@ -185,18 +110,18 @@ class AuthControllerTest extends AbstractIntegrationTest {
 
     @Test
     void refresh_revokedToken_returns401() throws Exception {
-        AuthResponse first = register("ali@example.com", "Secret123");
+        AuthResponse first = adminLoginResponse("admin@example.com", "Secret123");
         RefreshRequest req = new RefreshRequest();
         req.setRefreshToken(first.getRefreshToken());
 
         // Birinchi refresh — token rotatsiya qiladi
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/admin/auth/refresh")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isOk());
 
         // Bir xil (endi bekor qilingan) token bilan qayta refresh
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/admin/auth/refresh")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isUnauthorized());
@@ -206,12 +131,12 @@ class AuthControllerTest extends AbstractIntegrationTest {
 
     @Test
     void logout_validToken_returns204() throws Exception {
-        AuthResponse auth = register("ali@example.com", "Secret123");
+        AuthResponse auth = adminLoginResponse("admin@example.com", "Secret123");
 
         RefreshRequest req = new RefreshRequest();
         req.setRefreshToken(auth.getRefreshToken());
 
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/api/admin/auth/logout")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isNoContent());
@@ -222,7 +147,7 @@ class AuthControllerTest extends AbstractIntegrationTest {
         RefreshRequest req = new RefreshRequest();
         req.setRefreshToken("unknown-token-uuid-value");
 
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/api/admin/auth/logout")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isNoContent());
@@ -230,18 +155,18 @@ class AuthControllerTest extends AbstractIntegrationTest {
 
     @Test
     void logout_thenRefresh_returns401() throws Exception {
-        AuthResponse auth = register("ali@example.com", "Secret123");
+        AuthResponse auth = adminLoginResponse("admin@example.com", "Secret123");
         RefreshRequest req = new RefreshRequest();
         req.setRefreshToken(auth.getRefreshToken());
 
         // Logout qilamiz
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/api/admin/auth/logout")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isNoContent());
 
         // O'sha token bilan refresh qilishga urinish
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/admin/auth/refresh")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isUnauthorized());
@@ -253,14 +178,14 @@ class AuthControllerTest extends AbstractIntegrationTest {
     void logoutAll_authenticated_returns204() throws Exception {
         String token = userToken();
 
-        mockMvc.perform(post("/api/auth/logout-all")
+        mockMvc.perform(post("/api/admin/auth/logout-all")
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void logoutAll_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(post("/api/auth/logout-all"))
+        mockMvc.perform(post("/api/admin/auth/logout-all"))
                 .andExpect(status().isUnauthorized());
     }
 }

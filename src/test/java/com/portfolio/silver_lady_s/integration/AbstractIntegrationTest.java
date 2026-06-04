@@ -3,10 +3,10 @@ package com.portfolio.silver_lady_s.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.silver_lady_s.dto.auth.AuthResponse;
 import com.portfolio.silver_lady_s.dto.auth.LoginRequest;
-import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
 import com.portfolio.silver_lady_s.entity.User;
 import com.portfolio.silver_lady_s.entity.UserRole;
 import com.portfolio.silver_lady_s.repository.UserRepository;
+import com.portfolio.silver_lady_s.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -52,6 +52,7 @@ public abstract class AbstractIntegrationTest {
     @Autowired private DataSource dataSource;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private UserRepository userRepository;
+    @Autowired private JwtService jwtService;
 
     @BeforeEach
     void resetDatabase() throws Exception {
@@ -71,19 +72,13 @@ public abstract class AbstractIntegrationTest {
         }
     }
 
-    protected AuthResponse register(String email, String password) throws Exception {
-        RegisterRequest req = new RegisterRequest();
-        req.setEmail(email);
-        req.setPassword(password);
-        req.setFullName("Test User");
-
-        String body = mockMvc.perform(post("/api/auth/register")
-                        .contentType(APPLICATION_JSON)
-                        .content(toJson(req)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        return objectMapper.readValue(body, AuthResponse.class);
+    protected User createUser(String email, String password, UserRole role) {
+        User u = new User();
+        u.setFullName("Test User");
+        u.setEmail(email);
+        u.setPasswordHash(passwordEncoder.encode(password));
+        u.setRole(role);
+        return userRepository.save(u);
     }
 
     protected String loginToken(String email, String password) throws Exception {
@@ -91,7 +86,7 @@ public abstract class AbstractIntegrationTest {
         req.setEmail(email);
         req.setPassword(password);
 
-        String body = mockMvc.perform(post("/api/auth/login")
+        String body = mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(APPLICATION_JSON)
                         .content(toJson(req)))
                 .andExpect(status().isOk())
@@ -100,18 +95,37 @@ public abstract class AbstractIntegrationTest {
         return objectMapper.readValue(body, AuthResponse.class).getAccessToken();
     }
 
-    protected String userToken() throws Exception {
-        register("user@test.com", "User1234!");
-        return loginToken("user@test.com", "User1234!");
+    /** Admin yaratib login orqali to'liq AuthResponse (access + refresh token) qaytaradi. */
+    protected AuthResponse adminLoginResponse(String email, String password) throws Exception {
+        createUser(email, password, UserRole.ADMIN);
+
+        LoginRequest req = new LoginRequest();
+        req.setEmail(email);
+        req.setPassword(password);
+
+        String body = mockMvc.perform(post("/api/admin/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(toJson(req)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(body, AuthResponse.class);
+    }
+
+    /** USER role uchun JWT to'g'ridan-to'g'ri generatsiya qiladi (login endpoint'idan o'tmaydi). */
+    protected String userToken() {
+        User user = createUser("user@test.com", "User1234!", UserRole.USER);
+        return jwtService.generateAccessToken(user);
+    }
+
+    /** Berilgan email bilan yangi USER yaratib, uning JWT'sini qaytaradi. */
+    protected String tokenForNewUser(String email, String password) {
+        User user = createUser(email, password, UserRole.USER);
+        return jwtService.generateAccessToken(user);
     }
 
     protected String adminToken() throws Exception {
-        User admin = new User();
-        admin.setFullName("Test Admin");
-        admin.setEmail("admin@test.com");
-        admin.setPasswordHash(passwordEncoder.encode("Admin1234!"));
-        admin.setRole(UserRole.ADMIN);
-        userRepository.save(admin);
+        createUser("admin@test.com", "Admin1234!", UserRole.ADMIN);
         return loginToken("admin@test.com", "Admin1234!");
     }
 

@@ -145,8 +145,7 @@ class OrderControllerTest extends AbstractIntegrationTest {
         placeOrder(token1);
 
         // user2 o'z buyurtmalarini ko'rsa — bo'sh bo'lishi kerak
-        register("user2@test.com", "User1234!");
-        String token2 = loginToken("user2@test.com", "User1234!");
+        String token2 = tokenForNewUser("user2@test.com", "User1234!");
 
         mockMvc.perform(get("/api/orders/my")
                         .header("Authorization", bearer(token2)))
@@ -172,8 +171,7 @@ class OrderControllerTest extends AbstractIntegrationTest {
         String token1 = userToken();
         Long orderId = placeOrder(token1);
 
-        register("user2@test.com", "User1234!");
-        String token2 = loginToken("user2@test.com", "User1234!");
+        String token2 = tokenForNewUser("user2@test.com", "User1234!");
 
         mockMvc.perform(get("/api/orders/my/" + orderId)
                         .header("Authorization", bearer(token2)))
@@ -199,8 +197,7 @@ class OrderControllerTest extends AbstractIntegrationTest {
         String token1 = userToken();
         Long orderId = placeOrder(token1);
 
-        register("user2@test.com", "User1234!");
-        String token2 = loginToken("user2@test.com", "User1234!");
+        String token2 = tokenForNewUser("user2@test.com", "User1234!");
 
         mockMvc.perform(patch("/api/orders/my/" + orderId + "/cancel")
                         .header("Authorization", bearer(token2)))
