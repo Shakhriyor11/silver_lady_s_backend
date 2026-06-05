@@ -3,11 +3,6 @@ package com.portfolio.silver_lady_s.controller;
 import com.portfolio.silver_lady_s.dto.auth.AuthResponse;
 import com.portfolio.silver_lady_s.dto.auth.LoginRequest;
 import com.portfolio.silver_lady_s.dto.auth.RefreshRequest;
-import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
-import com.portfolio.silver_lady_s.dto.auth.SendEmailOtpRequest;
-import com.portfolio.silver_lady_s.dto.auth.SendOtpRequest;
-import com.portfolio.silver_lady_s.dto.auth.VerifyEmailOtpRequest;
-import com.portfolio.silver_lady_s.dto.auth.VerifyOtpRequest;
 import com.portfolio.silver_lady_s.security.CurrentUser;
 import com.portfolio.silver_lady_s.service.AuthService;
 import jakarta.validation.Valid;
@@ -16,17 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
-
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse register(@Valid @RequestBody RegisterRequest req) {
-        return authService.register(req);
-    }
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest req) {
@@ -49,41 +38,4 @@ public class AuthController {
     public void logoutAll() {
         authService.logoutAll(CurrentUser.principal().getUserId());
     }
-
-    @PostMapping("/send-otp")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void sendOtp(@Valid @RequestBody SendOtpRequest req) {
-        authService.sendOtp(req.getPhone());
-    }
-
-    @PostMapping("/verify-otp")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void verifyOtp(@Valid @RequestBody VerifyOtpRequest req) {
-        authService.verifyOtp(req.getPhone(), req.getOtp());
-    }
-
-    @PostMapping("/send-otp-email")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void sendOtpEmail(@Valid @RequestBody SendEmailOtpRequest req) {
-        authService.sendOtpEmail(req.getEmail());
-    }
-
-    @PostMapping("/verify-otp-email")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void verifyOtpEmail(@Valid @RequestBody VerifyEmailOtpRequest req) {
-        authService.verifyOtpEmail(req.getEmail(), req.getOtp());
-    }
-
-    @PostMapping("/verify-otp-telegram")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void verifyOtpTelegram(@Valid @RequestBody VerifyEmailOtpRequest req) {
-        authService.verifyOtpTelegram(req.getEmail(), req.getOtp());
-    }
-
-    @PostMapping("/login-verify-otp")
-    public AuthResponse loginVerifyOtp(@Valid @RequestBody VerifyEmailOtpRequest req) {
-        return authService.loginVerifyOtp(req.getEmail(), req.getOtp());
-    }
 }
-
-

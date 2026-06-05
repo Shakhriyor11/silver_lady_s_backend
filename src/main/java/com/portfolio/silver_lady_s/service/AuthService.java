@@ -2,11 +2,8 @@ package com.portfolio.silver_lady_s.service;
 
 import com.portfolio.silver_lady_s.dto.auth.AuthResponse;
 import com.portfolio.silver_lady_s.dto.auth.LoginRequest;
-import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
 
 public interface AuthService {
-
-    AuthResponse register(RegisterRequest req);
 
     AuthResponse login(LoginRequest req);
 
@@ -15,18 +12,4 @@ public interface AuthService {
     void logout(String refreshToken);
 
     void logoutAll(Long userId);
-
-    void sendOtp(String phone);
-
-    void verifyOtp(String phone, String otp);
-
-    void sendOtpEmail(String email);
-
-    void verifyOtpEmail(String email, String otp);
-
-    void linkTelegramAndSendOtp(Long chatId, String linkToken);
-
-    void verifyOtpTelegram(String email, String otp);
-
-    AuthResponse loginVerifyOtp(String email, String otp);
 }
