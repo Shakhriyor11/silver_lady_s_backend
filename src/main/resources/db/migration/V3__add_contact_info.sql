@@ -1,0 +1,23 @@
+CREATE TABLE contact_info (
+    id             BIGSERIAL PRIMARY KEY,
+    singleton_key  INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK (singleton_key = 1),
+    phone          VARCHAR(40)  NOT NULL,
+    phone2         VARCHAR(40),
+    email          VARCHAR(120),
+    address        VARCHAR(255) NOT NULL,
+    address_uz     VARCHAR(255),
+    address_ru     VARCHAR(255),
+    address_en     VARCHAR(255),
+    working_hours     VARCHAR(80) NOT NULL,
+    working_hours_uz  VARCHAR(80),
+    working_hours_ru  VARCHAR(80),
+    working_hours_en  VARCHAR(80),
+    location_link  VARCHAR(500),
+    instagram      VARCHAR(255),
+    telegram       VARCHAR(255),
+    whatsapp       VARCHAR(40),
+    facebook       VARCHAR(255),
+    youtube        VARCHAR(255),
+    created_at     TIMESTAMP,
+    updated_at     TIMESTAMP
+);
