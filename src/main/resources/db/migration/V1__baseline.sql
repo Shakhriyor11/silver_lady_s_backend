@@ -1,0 +1,3 @@
+-- Baseline: Bu fayl faqat yangi (bo'sh) bazalarda ishlaydi.
+-- Mavjud serverda Flyway baseline-on-migrate=true orqali bu versiyani o'tkazib yuboradi.
+-- Shuning uchun bu yerda hech narsa yozilmaydi — Hibernate o'zi sxema yaratadi (ddl-auto=update lokalda).
