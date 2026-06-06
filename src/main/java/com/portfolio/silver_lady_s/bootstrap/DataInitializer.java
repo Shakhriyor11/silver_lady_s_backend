@@ -1,9 +1,11 @@
 package com.portfolio.silver_lady_s.bootstrap;
 
 import com.portfolio.silver_lady_s.entity.AboutUs;
+import com.portfolio.silver_lady_s.entity.ContactInfo;
 import com.portfolio.silver_lady_s.entity.User;
 import com.portfolio.silver_lady_s.entity.UserRole;
 import com.portfolio.silver_lady_s.repository.AboutUsRepository;
+import com.portfolio.silver_lady_s.repository.ContactInfoRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,7 @@ import org.springframework.util.StringUtils;
 public class DataInitializer implements CommandLineRunner {
 
     private final AboutUsRepository aboutUsRepository;
+    private final ContactInfoRepository contactInfoRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -46,6 +49,15 @@ public class DataInitializer implements CommandLineRunner {
             a.setLocationLink("");
             a.setDescription("Do'kon haqida qisqacha ma'lumot.");
             aboutUsRepository.save(a);
+        }
+
+        if (contactInfoRepository.count() == 0) {
+            ContactInfo c = new ContactInfo();
+            c.setPhone("+998 ...");
+            c.setEmail("info@silverladys.uz");
+            c.setAddress("Toshkent, ...");
+            c.setWorkingHours("09:00 - 21:00");
+            contactInfoRepository.save(c);
         }
 
         if (adminEnabled && !userRepository.existsByRole(UserRole.ADMIN)) {

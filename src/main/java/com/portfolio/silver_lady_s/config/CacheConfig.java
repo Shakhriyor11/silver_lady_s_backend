@@ -13,17 +13,19 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class CacheConfig {
 
-    public static final String CACHE_CATEGORIES = "categories";
-    public static final String CACHE_ABOUT      = "about";
-    public static final String CACHE_CAROUSEL   = "carousel";
+    public static final String CACHE_CATEGORIES   = "categories";
+    public static final String CACHE_ABOUT        = "about";
+    public static final String CACHE_CAROUSEL     = "carousel";
+    public static final String CACHE_CONTACT_INFO = "contactInfo";
 
     @Bean
     public CacheManager cacheManager() {
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
-                build(CACHE_CATEGORIES, 10, TimeUnit.MINUTES, 100),
-                build(CACHE_ABOUT,       30, TimeUnit.MINUTES,  10),
-                build(CACHE_CAROUSEL,     5, TimeUnit.MINUTES,  10)
+                build(CACHE_CATEGORIES,   10, TimeUnit.MINUTES, 100),
+                build(CACHE_ABOUT,        30, TimeUnit.MINUTES,  10),
+                build(CACHE_CAROUSEL,      5, TimeUnit.MINUTES,  10),
+                build(CACHE_CONTACT_INFO, 30, TimeUnit.MINUTES,  10)
         ));
         return manager;
     }
