@@ -57,6 +57,7 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
       - ./frontend/dist:/var/www/frontend:ro
+      - ./miniapp/dist:/var/www/miniapp:ro
     restart: always
     networks:
       - backend
