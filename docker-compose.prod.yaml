@@ -19,7 +19,7 @@ services:
       - backend
 
   app:
-    build: .
+    image: ghcr.io/shakhriyor11/silver_lady_s_backend:latest
     container_name: silver_app
     depends_on:
       db:
