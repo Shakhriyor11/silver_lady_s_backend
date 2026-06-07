@@ -38,8 +38,10 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 20m
           script: |
             set -e
+            docker pull eclipse-temurin:17-jre-jammy
             cd /root/silver_lady_s_backend
             docker compose -f docker-compose.prod.yaml up -d --build --no-deps app
             docker image prune -f
