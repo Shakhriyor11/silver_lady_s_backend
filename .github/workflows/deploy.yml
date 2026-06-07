@@ -38,7 +38,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/silver_lady_s_backend:latest
+          tags: ghcr.io/shakhriyor11/silver_lady_s_backend:latest
 
       - name: Deploy on server
         uses: appleboy/ssh-action@v1.0.3
@@ -49,7 +49,7 @@ jobs:
           command_timeout: 10m
           script: |
             set -e
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u shakhriyor11 --password-stdin
             cd /root/silver_lady_s_backend
             docker compose -f docker-compose.prod.yaml pull app
             docker compose -f docker-compose.prod.yaml up -d --no-build --no-deps app
