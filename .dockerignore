@@ -1,8 +1,2 @@
-.idea/
-.vscode/
-*.iml
-.git/
-.DS_Store
-Thumbs.db
-*.log
-.env
+*
+!target/*.jar
