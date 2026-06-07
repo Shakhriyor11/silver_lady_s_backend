@@ -46,7 +46,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             JOIN product_categories pc ON pc.product_id = p.id
             WHERE p.active = true
               AND pc.category_id = :categoryId
-            ORDER BY COALESCE(p.sale_price, p.price) ASC
+            ORDER BY CASE
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                THEN p.price * (1 - p.discount_percent / 100.0)
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                THEN GREATEST(0, p.price - p.discount_amount)
+              ELSE p.price
+            END ASC
             """,
             countQuery = """
             SELECT count(DISTINCT p.id) FROM products p
@@ -62,7 +72,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             JOIN product_categories pc ON pc.product_id = p.id
             WHERE p.active = true
               AND pc.category_id = :categoryId
-            ORDER BY COALESCE(p.sale_price, p.price) DESC
+            ORDER BY CASE
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                THEN p.price * (1 - p.discount_percent / 100.0)
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                THEN GREATEST(0, p.price - p.discount_amount)
+              ELSE p.price
+            END DESC
             """,
             countQuery = """
             SELECT count(DISTINCT p.id) FROM products p
@@ -115,7 +135,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 OR word_similarity(:query, p.name)                      > 0.3
                 OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
               )
-            ORDER BY COALESCE(p.sale_price, p.price) ASC
+            ORDER BY CASE
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                THEN p.price * (1 - p.discount_percent / 100.0)
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                THEN GREATEST(0, p.price - p.discount_amount)
+              ELSE p.price
+            END ASC
             """,
             countQuery = """
             SELECT count(*) FROM products p
@@ -141,7 +171,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 OR word_similarity(:query, p.name)                      > 0.3
                 OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
               )
-            ORDER BY COALESCE(p.sale_price, p.price) DESC
+            ORDER BY CASE
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                THEN p.price * (1 - p.discount_percent / 100.0)
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                THEN GREATEST(0, p.price - p.discount_amount)
+              ELSE p.price
+            END DESC
             """,
             countQuery = """
             SELECT count(*) FROM products p
@@ -211,7 +251,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 OR word_similarity(:query, p.name)                      > 0.3
                 OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
               )
-            ORDER BY COALESCE(p.sale_price, p.price) ASC
+            ORDER BY CASE
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                THEN p.price * (1 - p.discount_percent / 100.0)
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                THEN GREATEST(0, p.price - p.discount_amount)
+              ELSE p.price
+            END ASC
             """,
             countQuery = """
             SELECT count(*) FROM products p
@@ -246,7 +296,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 OR word_similarity(:query, p.name)                      > 0.3
                 OR word_similarity(:query, COALESCE(p.description,''))  > 0.3
               )
-            ORDER BY COALESCE(p.sale_price, p.price) DESC
+            ORDER BY CASE
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                THEN p.price * (1 - p.discount_percent / 100.0)
+              WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+               AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+               AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                THEN GREATEST(0, p.price - p.discount_amount)
+              ELSE p.price
+            END DESC
             """,
             countQuery = """
             SELECT count(*) FROM products p
