@@ -5,10 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(
         name = "categories",
-        uniqueConstraints = @UniqueConstraint(name = "uk_category_name", columnNames = "name"),
         indexes = @Index(name = "idx_category_name", columnList = "name")
 )
 @Getter
@@ -25,4 +27,15 @@ public class Category extends BaseTimeEntity {
     @Column(length = 80) private String nameUz;
     @Column(length = 80) private String nameRu;
     @Column(length = 80) private String nameEn;
+
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder = 0;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Category parent;
+
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+    @OrderBy("sortOrder ASC, id ASC")
+    private List<Category> children = new ArrayList<>();
 }

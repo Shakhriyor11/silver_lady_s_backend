@@ -32,7 +32,7 @@ public class ProductDto {
     private Instant discountStartsAt;
     private Instant discountEndsAt;
     private List<CategoryInfo> categories;
-    private List<String> availableSizes;
+    private List<SizeEntryDto> sizeEntries;
     private boolean active;
     private Instant createdAt;
     private Instant updatedAt;
@@ -66,7 +66,7 @@ public class ProductDto {
                 p.getDiscountStartsAt(),
                 p.getDiscountEndsAt(),
                 cats,
-                new java.util.ArrayList<>(p.getAvailableSizes()),
+                p.getSizeEntries().stream().map(SizeEntryDto::from).toList(),
                 p.isActive(),
                 p.getCreatedAt(),
                 p.getUpdatedAt(),

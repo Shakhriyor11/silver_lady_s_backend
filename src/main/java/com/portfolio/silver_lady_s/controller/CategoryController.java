@@ -49,4 +49,16 @@ public class CategoryController {
         categoryService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Kategoriyalar tartibini o'zgartirish.
+     * Body: ID lar ro'yxati, kerakli tartibda. Masalan: [3, 1, 2]
+     * Natija: sort_order = 0, 1, 2 (tartib bo'yicha).
+     */
+    @PatchMapping("/reorder")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> reorder(@RequestBody List<Long> orderedIds) {
+        categoryService.reorder(orderedIds);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -15,4 +15,6 @@ public class UpdateCategoryRequest {
     @Size(max = 80) private String nameUz;
     @Size(max = 80) private String nameRu;
     @Size(max = 80) private String nameEn;
+
+    private Long parentId;
 }

@@ -140,7 +140,10 @@ public class CartServiceImpl implements CartService {
     }
 
     private void validateSize(Product product, String size) {
-        List<String> available = product.getAvailableSizes();
+        List<String> available = product.getSizeEntries().stream()
+                .filter(e -> e.getQuantity() > 0)
+                .map(e -> e.getSize())
+                .toList();
         if (available.isEmpty()) return;
         if (size == null || !available.contains(size)) {
             throw new BadRequestException(
