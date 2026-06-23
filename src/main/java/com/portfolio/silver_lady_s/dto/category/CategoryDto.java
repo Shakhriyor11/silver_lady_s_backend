@@ -4,6 +4,8 @@ import com.portfolio.silver_lady_s.entity.Category;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 public class CategoryDto {
@@ -12,8 +14,23 @@ public class CategoryDto {
     private String nameUz;
     private String nameRu;
     private String nameEn;
+    private int sortOrder;
+    private Long parentId;
+    private List<CategoryDto> children;
 
     public static CategoryDto from(Category c) {
-        return new CategoryDto(c.getId(), c.getName(), c.getNameUz(), c.getNameRu(), c.getNameEn());
+        List<CategoryDto> kids = c.getChildren().stream()
+                .map(CategoryDto::from)
+                .toList();
+        return new CategoryDto(
+                c.getId(),
+                c.getName(),
+                c.getNameUz(),
+                c.getNameRu(),
+                c.getNameEn(),
+                c.getSortOrder(),
+                c.getParent() != null ? c.getParent().getId() : null,
+                kids
+        );
     }
 }

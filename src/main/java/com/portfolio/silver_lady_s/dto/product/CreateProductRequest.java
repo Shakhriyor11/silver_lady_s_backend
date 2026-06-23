@@ -45,7 +45,13 @@ public class CreateProductRequest {
     private List<Long> categoryIds;
 
     @Size(max = 20)
-    private List<@NotBlank @Size(max = 30) String> availableSizes;
+    private List<SizeEntryRequest> sizeEntries;
 
     private Boolean active;
+
+    @AssertTrue(message = "discountEndsAt must be after discountStartsAt")
+    private boolean isDiscountDatesValid() {
+        if (discountStartsAt == null || discountEndsAt == null) return true;
+        return discountEndsAt.isAfter(discountStartsAt);
+    }
 }

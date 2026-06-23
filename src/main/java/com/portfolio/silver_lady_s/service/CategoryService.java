@@ -12,4 +12,5 @@ public interface CategoryService {
     CategoryDto create(CreateCategoryRequest request);
     CategoryDto update(Long id, UpdateCategoryRequest request);
     void delete(Long id);
+    void reorder(List<Long> orderedIds);
 }

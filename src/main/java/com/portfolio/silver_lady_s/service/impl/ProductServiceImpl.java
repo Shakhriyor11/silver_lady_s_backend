@@ -3,9 +3,12 @@ package com.portfolio.silver_lady_s.service.impl;
 import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
+import com.portfolio.silver_lady_s.dto.product.SizeCountDto;
+import com.portfolio.silver_lady_s.dto.product.SizeEntryRequest;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
 import com.portfolio.silver_lady_s.entity.Category;
 import com.portfolio.silver_lady_s.entity.Product;
+import com.portfolio.silver_lady_s.entity.ProductSizeEntry;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
@@ -35,51 +38,77 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort, Pageable pageable) {
-        String q = (search == null) ? null : search.trim();
+    public PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort,
+                                                String sizeFilter, Pageable pageable) {
+        String q         = StringUtils.hasText(search) ? search.trim() : null;
         boolean priceAsc  = "price_asc".equals(sort);
         boolean priceDesc = "price_desc".equals(sort);
+        boolean hasSize   = StringUtils.hasText(sizeFilter);
+        boolean hasCat    = categoryId != null;
 
         if (StringUtils.hasText(q)) {
             String pattern = "%" + q + "%";
             Page<Long> idPage;
-            if (categoryId != null) {
+            if (hasCat && hasSize) {
+                idPage = priceAsc  ? productRepository.searchActiveByCategoryIdsAndSizePriceAsc(q, pattern, categoryId, sizeFilter, pageable)
+                       : priceDesc ? productRepository.searchActiveByCategoryIdsAndSizePriceDesc(q, pattern, categoryId, sizeFilter, pageable)
+                       :             productRepository.searchActiveByCategoryIdsAndSize(q, pattern, categoryId, sizeFilter, pageable);
+            } else if (hasCat) {
                 idPage = priceAsc  ? productRepository.searchActiveByCategoryIdsPriceAsc(q, pattern, categoryId, pageable)
                        : priceDesc ? productRepository.searchActiveByCategoryIdsPriceDesc(q, pattern, categoryId, pageable)
                        :             productRepository.searchActiveByCategoryIds(q, pattern, categoryId, pageable);
+            } else if (hasSize) {
+                idPage = priceAsc  ? productRepository.searchActiveIdsAndSizePriceAsc(q, pattern, sizeFilter, pageable)
+                       : priceDesc ? productRepository.searchActiveIdsAndSizePriceDesc(q, pattern, sizeFilter, pageable)
+                       :             productRepository.searchActiveIdsAndSize(q, pattern, sizeFilter, pageable);
             } else {
                 idPage = priceAsc  ? productRepository.searchActiveIdsPriceAsc(q, pattern, pageable)
                        : priceDesc ? productRepository.searchActiveIdsPriceDesc(q, pattern, pageable)
                        :             productRepository.searchActiveIds(q, pattern, pageable);
             }
-
-            List<Long> ids = idPage.getContent();
-            if (ids.isEmpty()) return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
-
-            Map<Long, Product> byId = productRepository.findByIdsWithDetails(ids).stream()
-                    .collect(Collectors.toMap(Product::getId, p -> p));
-            List<ProductDto> dtos = ids.stream()
-                    .map(byId::get).filter(Objects::nonNull).map(ProductDto::from).toList();
-            return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
+            return fetchByIds(idPage, pageable);
         }
 
-        if (categoryId != null) {
-            Page<Long> idPage = priceAsc  ? productRepository.findIdsByCategoryActivePriceAsc(categoryId, pageable)
-                               : priceDesc ? productRepository.findIdsByCategoryActivePriceDesc(categoryId, pageable)
-                               :             productRepository.findIdsByCategoryActive(categoryId, pageable);
-            List<Long> ids = idPage.getContent();
-            if (ids.isEmpty()) return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
-            Map<Long, Product> byId = productRepository.findByIdsWithDetails(ids).stream()
-                    .collect(Collectors.toMap(Product::getId, p -> p));
-            List<ProductDto> dtos = ids.stream()
-                    .map(byId::get).filter(Objects::nonNull).map(ProductDto::from).toList();
-            return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
+        if (hasCat || hasSize) {
+            Page<Long> idPage;
+            if (hasCat && hasSize) {
+                idPage = priceAsc  ? productRepository.findIdsByCategoryActiveAndSizePriceAsc(categoryId, sizeFilter, pageable)
+                       : priceDesc ? productRepository.findIdsByCategoryActiveAndSizePriceDesc(categoryId, sizeFilter, pageable)
+                       :             productRepository.findIdsByCategoryActiveAndSize(categoryId, sizeFilter, pageable);
+            } else if (hasCat) {
+                idPage = priceAsc  ? productRepository.findIdsByCategoryActivePriceAsc(categoryId, pageable)
+                       : priceDesc ? productRepository.findIdsByCategoryActivePriceDesc(categoryId, pageable)
+                       :             productRepository.findIdsByCategoryActive(categoryId, pageable);
+            } else {
+                idPage = priceAsc  ? productRepository.findIdsByActiveAndSizePriceAsc(sizeFilter, pageable)
+                       : priceDesc ? productRepository.findIdsByActiveAndSizePriceDesc(sizeFilter, pageable)
+                       :             productRepository.findIdsByActiveAndSize(sizeFilter, pageable);
+            }
+            return fetchByIds(idPage, pageable);
         }
 
         Page<Product> page = priceAsc  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
                            : priceDesc ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
                            :             productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
         return new PageResponse<>(page.map(ProductDto::from));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SizeCountDto> getAvailableSizes() {
+        return productRepository.findSizesWithCounts().stream()
+                .map(row -> new SizeCountDto((String) row[0], ((Number) row[1]).longValue()))
+                .toList();
+    }
+
+    private PageResponse<ProductDto> fetchByIds(Page<Long> idPage, Pageable pageable) {
+        List<Long> ids = idPage.getContent();
+        if (ids.isEmpty()) return new PageResponse<>(new PageImpl<>(List.of(), pageable, 0));
+        Map<Long, Product> byId = productRepository.findByIdsWithDetails(ids).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+        List<ProductDto> dtos = ids.stream()
+                .map(byId::get).filter(Objects::nonNull).map(ProductDto::from).toList();
+        return new PageResponse<>(new PageImpl<>(dtos, pageable, idPage.getTotalElements()));
     }
 
     @Override
@@ -129,18 +158,28 @@ public class ProductServiceImpl implements ProductService {
         p.setDescriptionUz(req.getDescriptionUz());
         p.setDescriptionRu(req.getDescriptionRu());
         p.setDescriptionEn(req.getDescriptionEn());
-        p.setStockQuantity(req.getStockQuantity() != null ? req.getStockQuantity() : 0);
         p.setPrice(req.getPrice());
         p.setDiscountPercent(req.getDiscountPercent());
         p.setDiscountAmount(req.getDiscountAmount());
         p.setDiscountStartsAt(req.getDiscountStartsAt());
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().addAll(cats);
-        if (req.getAvailableSizes() != null) {
-            p.getAvailableSizes().clear();
-            p.getAvailableSizes().addAll(req.getAvailableSizes());
-        }
         if (req.getActive() != null) p.setActive(req.getActive());
+
+        if (req.getSizeEntries() != null && !req.getSizeEntries().isEmpty()) {
+            for (int i = 0; i < req.getSizeEntries().size(); i++) {
+                SizeEntryRequest ser = req.getSizeEntries().get(i);
+                ProductSizeEntry entry = new ProductSizeEntry();
+                entry.setProduct(p);
+                entry.setSize(ser.size());
+                entry.setQuantity(ser.quantity());
+                entry.setSortOrder(i);
+                p.getSizeEntries().add(entry);
+            }
+            p.setStockQuantity(req.getSizeEntries().stream().mapToInt(SizeEntryRequest::quantity).sum());
+        } else {
+            p.setStockQuantity(req.getStockQuantity() != null ? req.getStockQuantity() : 0);
+        }
 
         return ProductDto.from(productRepository.save(p));
     }
@@ -161,7 +200,6 @@ public class ProductServiceImpl implements ProductService {
         p.setDescriptionUz(req.getDescriptionUz());
         p.setDescriptionRu(req.getDescriptionRu());
         p.setDescriptionEn(req.getDescriptionEn());
-        if (req.getStockQuantity() != null) p.setStockQuantity(req.getStockQuantity());
         p.setPrice(req.getPrice());
         p.setDiscountPercent(req.getDiscountPercent());
         p.setDiscountAmount(req.getDiscountAmount());
@@ -169,13 +207,45 @@ public class ProductServiceImpl implements ProductService {
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().clear();
         p.getCategories().addAll(cats);
-        if (req.getAvailableSizes() != null) {
-            p.getAvailableSizes().clear();
-            p.getAvailableSizes().addAll(req.getAvailableSizes());
-        }
         if (req.getActive() != null) p.setActive(req.getActive());
 
+        if (req.getSizeEntries() != null) {
+            mergeSizeEntries(p, req.getSizeEntries());
+            p.setStockQuantity(req.getSizeEntries().stream().mapToInt(SizeEntryRequest::quantity).sum());
+        } else if (req.getStockQuantity() != null) {
+            p.setStockQuantity(req.getStockQuantity());
+        }
+
         return ProductDto.from(productRepository.save(p));
+    }
+
+    private void mergeSizeEntries(Product p, List<SizeEntryRequest> requested) {
+        Map<String, ProductSizeEntry> currentBySize =
+                p.getSizeEntries().stream()
+                        .collect(Collectors.toMap(
+                                ProductSizeEntry::getSize, e -> e));
+
+        Set<String> requestedSizes = requested.stream()
+                .map(SizeEntryRequest::size)
+                .collect(Collectors.toSet());
+
+        p.getSizeEntries().removeIf(e -> !requestedSizes.contains(e.getSize()));
+
+        for (int i = 0; i < requested.size(); i++) {
+            SizeEntryRequest ser = requested.get(i);
+            if (currentBySize.containsKey(ser.size())) {
+                ProductSizeEntry existing = currentBySize.get(ser.size());
+                existing.setQuantity(ser.quantity());
+                existing.setSortOrder(i);
+            } else {
+                ProductSizeEntry entry = new ProductSizeEntry();
+                entry.setProduct(p);
+                entry.setSize(ser.size());
+                entry.setQuantity(ser.quantity());
+                entry.setSortOrder(i);
+                p.getSizeEntries().add(entry);
+            }
+        }
     }
 
     @Override

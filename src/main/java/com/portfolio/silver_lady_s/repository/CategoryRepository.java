@@ -7,7 +7,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    boolean existsByNameIgnoreCase(String name);
-    Optional<Category> findByNameIgnoreCase(String name);
-    List<Category> findAllByOrderByIdAsc();
+
+    // Root kategoriyalar (ota kategoriya yo'q), sort_order bo'yicha tartibda
+    List<Category> findAllByParentIsNullOrderBySortOrderAscIdAsc();
+
+    // Ism tekshiruvi: root darajada
+    boolean existsByNameIgnoreCaseAndParentIsNull(String name);
+    Optional<Category> findByNameIgnoreCaseAndParentIsNull(String name);
+
+    // Ism tekshiruvi: ma'lum parent ostida
+    boolean existsByNameIgnoreCaseAndParentId(String name, Long parentId);
+    Optional<Category> findByNameIgnoreCaseAndParentId(String name, Long parentId);
 }

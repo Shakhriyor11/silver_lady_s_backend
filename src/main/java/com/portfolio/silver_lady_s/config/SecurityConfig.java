@@ -70,7 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/*/similar").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/carousel").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/carousel").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/stats/visit").permitAll()
 
                         // authenticated users
                         .requestMatchers("/api/cart/**").authenticated()

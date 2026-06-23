@@ -15,7 +15,7 @@ public class CacheConfig {
 
     public static final String CACHE_CATEGORIES   = "categories";
     public static final String CACHE_ABOUT        = "about";
-    public static final String CACHE_CAROUSEL     = "carousel";
+    public static final String CACHE_CAROUSEL     = "carousel"; 
     public static final String CACHE_CONTACT_INFO = "contactInfo";
 
     @Bean

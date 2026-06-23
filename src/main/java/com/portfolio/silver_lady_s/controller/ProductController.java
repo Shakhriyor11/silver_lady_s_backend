@@ -3,6 +3,7 @@ package com.portfolio.silver_lady_s.controller;
 import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
+import com.portfolio.silver_lady_s.dto.product.SizeCountDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
 import com.portfolio.silver_lady_s.security.UserPrincipal;
 import com.portfolio.silver_lady_s.service.ProductService;
@@ -36,18 +37,24 @@ public class ProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
-            @RequestParam(defaultValue = "0")  @Min(0)          int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+            @RequestParam(required = false) String sizeFilter,
+            @RequestParam(defaultValue = "0")   @Min(0)          int page,
+            @RequestParam(defaultValue = "20")  @Min(1) @Max(500) int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return productService.getProducts(categoryId, search, sort, pageable);
+        return productService.getProducts(categoryId, search, sort, sizeFilter, pageable);
+    }
+
+    @GetMapping("/sizes")
+    public List<SizeCountDto> getSizes() {
+        return productService.getAvailableSizes();
     }
 
     @GetMapping("/archived")
     @PreAuthorize("hasRole('ADMIN')")
     public PageResponse<ProductDto> getArchived(
-            @RequestParam(defaultValue = "0")  @Min(0)          int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+            @RequestParam(defaultValue = "0")   @Min(0)          int page,
+            @RequestParam(defaultValue = "20")  @Min(1) @Max(500) int size
     ) {
         return productService.getArchivedProducts(PageRequest.of(page, size));
     }

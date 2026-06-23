@@ -36,7 +36,8 @@ class CategoryServiceImplTest {
         CreateCategoryRequest req = new CreateCategoryRequest();
         req.setName("  Uzuklar  ");
 
-        when(categoryRepository.existsByNameIgnoreCase("Uzuklar")).thenReturn(false);
+        when(categoryRepository.findByNameIgnoreCaseAndParentIsNull("Uzuklar")).thenReturn(Optional.empty());
+        when(categoryRepository.count()).thenReturn(3L);
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> {
             Category c = inv.getArgument(0);
             c.setId(1L);
@@ -54,7 +55,8 @@ class CategoryServiceImplTest {
         CreateCategoryRequest req = new CreateCategoryRequest();
         req.setName("Uzuklar");
 
-        when(categoryRepository.existsByNameIgnoreCase("Uzuklar")).thenReturn(true);
+        Category existing = makeCategory(5L, "Uzuklar");
+        when(categoryRepository.findByNameIgnoreCaseAndParentIsNull("Uzuklar")).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> categoryService.create(req))
                 .isInstanceOf(ConflictException.class)
@@ -70,7 +72,7 @@ class CategoryServiceImplTest {
         req.setName("Bilaguzuklar");
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.findByNameIgnoreCase("Bilaguzuklar")).thenReturn(Optional.empty());
+        when(categoryRepository.findByNameIgnoreCaseAndParentIsNull("Bilaguzuklar")).thenReturn(Optional.empty());
         when(categoryRepository.save(existing)).thenReturn(existing);
 
         CategoryDto result = categoryService.update(1L, req);
@@ -85,7 +87,7 @@ class CategoryServiceImplTest {
         req.setName("Uzuklar");
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.findByNameIgnoreCase("Uzuklar")).thenReturn(Optional.of(existing));
+        when(categoryRepository.findByNameIgnoreCaseAndParentIsNull("Uzuklar")).thenReturn(Optional.of(existing));
         when(categoryRepository.save(existing)).thenReturn(existing);
 
         CategoryDto result = categoryService.update(1L, req);
@@ -101,7 +103,7 @@ class CategoryServiceImplTest {
         req.setName("Marjonlar");
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.findByNameIgnoreCase("Marjonlar")).thenReturn(Optional.of(other));
+        when(categoryRepository.findByNameIgnoreCaseAndParentIsNull("Marjonlar")).thenReturn(Optional.of(other));
 
         assertThatThrownBy(() -> categoryService.update(1L, req))
                 .isInstanceOf(ConflictException.class)

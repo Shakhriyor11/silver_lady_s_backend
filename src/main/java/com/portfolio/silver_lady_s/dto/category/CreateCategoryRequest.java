@@ -15,4 +15,6 @@ public class CreateCategoryRequest {
     @Size(max = 80) private String nameUz;
     @Size(max = 80) private String nameRu;
     @Size(max = 80) private String nameEn;
+
+    private Long parentId;
 }

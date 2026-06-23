@@ -13,6 +13,19 @@ import java.util.Optional;
 
 public interface ProductViewRepository extends JpaRepository<ProductView, Long> {
 
+    @Query("""
+            SELECT p.id, p.name,
+                   (SELECT pi.url FROM ProductImage pi WHERE pi.product = p ORDER BY pi.displayOrder ASC, pi.id ASC LIMIT 1),
+                   SUM(pv.viewCount)
+            FROM ProductView pv
+            JOIN pv.product p
+            WHERE p.active = true
+            GROUP BY p.id, p.name
+            ORDER BY SUM(pv.viewCount) DESC
+            """)
+    List<Object[]> findTopViewedProducts(Pageable pageable);
+
+
     Optional<ProductView> findByUserIdAndProductId(Long userId, Long productId);
 
     @Query("""
