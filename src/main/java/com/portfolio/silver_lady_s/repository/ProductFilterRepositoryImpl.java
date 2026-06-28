@@ -36,7 +36,16 @@ public class ProductFilterRepositoryImpl implements ProductFilterRepository {
         Map<String, Object> params = new LinkedHashMap<>();
 
         if (categoryId != null) {
-            where.append("  AND EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id = p.id AND pc.category_id = :categoryId)\n");
+            where.append("""
+                      AND EXISTS (
+                        SELECT 1 FROM product_categories pc
+                        WHERE pc.product_id = p.id
+                          AND pc.category_id IN (
+                            SELECT c.id FROM categories c
+                            WHERE c.id = :categoryId OR c.parent_id = :categoryId
+                          )
+                      )
+                    """);
             params.put("categoryId", categoryId);
         }
         if (size != null) {
