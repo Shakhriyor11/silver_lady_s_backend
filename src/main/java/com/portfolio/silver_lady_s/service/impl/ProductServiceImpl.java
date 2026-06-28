@@ -13,6 +13,8 @@ import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.ProductService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,67 +38,34 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
+    @PersistenceContext
+    private EntityManager em;
+
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort,
                                                 String sizeFilter, Pageable pageable) {
-        String q         = StringUtils.hasText(search) ? search.trim() : null;
-        boolean priceAsc  = "price_asc".equals(sort);
-        boolean priceDesc = "price_desc".equals(sort);
-        boolean hasSize   = StringUtils.hasText(sizeFilter);
-        boolean hasCat    = categoryId != null;
+        String q    = StringUtils.hasText(search)     ? search.trim()     : null;
+        String size = StringUtils.hasText(sizeFilter) ? sizeFilter.trim() : null;
 
-        if (StringUtils.hasText(q)) {
-            String pattern = "%" + q + "%";
-            Page<Long> idPage;
-            if (hasCat && hasSize) {
-                idPage = priceAsc  ? productRepository.searchActiveByCategoryIdsAndSizePriceAsc(q, pattern, categoryId, sizeFilter, pageable)
-                       : priceDesc ? productRepository.searchActiveByCategoryIdsAndSizePriceDesc(q, pattern, categoryId, sizeFilter, pageable)
-                       :             productRepository.searchActiveByCategoryIdsAndSize(q, pattern, categoryId, sizeFilter, pageable);
-            } else if (hasCat) {
-                idPage = priceAsc  ? productRepository.searchActiveByCategoryIdsPriceAsc(q, pattern, categoryId, pageable)
-                       : priceDesc ? productRepository.searchActiveByCategoryIdsPriceDesc(q, pattern, categoryId, pageable)
-                       :             productRepository.searchActiveByCategoryIds(q, pattern, categoryId, pageable);
-            } else if (hasSize) {
-                idPage = priceAsc  ? productRepository.searchActiveIdsAndSizePriceAsc(q, pattern, sizeFilter, pageable)
-                       : priceDesc ? productRepository.searchActiveIdsAndSizePriceDesc(q, pattern, sizeFilter, pageable)
-                       :             productRepository.searchActiveIdsAndSize(q, pattern, sizeFilter, pageable);
-            } else {
-                idPage = priceAsc  ? productRepository.searchActiveIdsPriceAsc(q, pattern, pageable)
-                       : priceDesc ? productRepository.searchActiveIdsPriceDesc(q, pattern, pageable)
-                       :             productRepository.searchActiveIds(q, pattern, pageable);
-            }
-            return fetchByIds(idPage, pageable);
+        if (q == null && categoryId == null && size == null) {
+            Page<Product> page = "price_asc".equals(sort)  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
+                               : "price_desc".equals(sort) ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
+                               :                             productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
+            return new PageResponse<>(page.map(ProductDto::from));
         }
 
-        if (hasCat || hasSize) {
-            Page<Long> idPage;
-            if (hasCat && hasSize) {
-                idPage = priceAsc  ? productRepository.findIdsByCategoryActiveAndSizePriceAsc(categoryId, sizeFilter, pageable)
-                       : priceDesc ? productRepository.findIdsByCategoryActiveAndSizePriceDesc(categoryId, sizeFilter, pageable)
-                       :             productRepository.findIdsByCategoryActiveAndSize(categoryId, sizeFilter, pageable);
-            } else if (hasCat) {
-                idPage = priceAsc  ? productRepository.findIdsByCategoryActivePriceAsc(categoryId, pageable)
-                       : priceDesc ? productRepository.findIdsByCategoryActivePriceDesc(categoryId, pageable)
-                       :             productRepository.findIdsByCategoryActive(categoryId, pageable);
-            } else {
-                idPage = priceAsc  ? productRepository.findIdsByActiveAndSizePriceAsc(sizeFilter, pageable)
-                       : priceDesc ? productRepository.findIdsByActiveAndSizePriceDesc(sizeFilter, pageable)
-                       :             productRepository.findIdsByActiveAndSize(sizeFilter, pageable);
-            }
-            return fetchByIds(idPage, pageable);
-        }
-
-        Page<Product> page = priceAsc  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
-                           : priceDesc ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
-                           :             productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
-        return new PageResponse<>(page.map(ProductDto::from));
+        Page<Long> idPage = productRepository.findActiveIds(q, categoryId, size, sort, pageable);
+        return fetchByIds(idPage, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SizeCountDto> getAvailableSizes() {
-        return productRepository.findSizesWithCounts().stream()
+    public List<SizeCountDto> getAvailableSizes(Long categoryId) {
+        List<Object[]> rows = categoryId != null
+                ? productRepository.findSizesWithCountsByCategory(categoryId)
+                : productRepository.findSizesWithCounts();
+        return rows.stream()
                 .map(row -> new SizeCountDto((String) row[0], ((Number) row[1]).longValue()))
                 .toList();
     }
@@ -255,6 +224,18 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + id));
         p.setActive(false);
         productRepository.save(p);
+    }
+
+    @Override
+    @Transactional
+    public void permanentDelete(Long id) {
+        if (!productRepository.existsById(id))
+            throw new NotFoundException("Product not found: id=" + id);
+        em.createNativeQuery("UPDATE order_items      SET product_id = NULL WHERE product_id = :id").setParameter("id", id).executeUpdate();
+        em.createNativeQuery("UPDATE contact_messages SET product_id = NULL WHERE product_id = :id").setParameter("id", id).executeUpdate();
+        em.createNativeQuery("DELETE FROM product_views WHERE product_id = :id").setParameter("id", id).executeUpdate();
+        em.createNativeQuery("DELETE FROM cart_items   WHERE product_id = :id").setParameter("id", id).executeUpdate();
+        productRepository.deleteById(id);
     }
 
     @Override

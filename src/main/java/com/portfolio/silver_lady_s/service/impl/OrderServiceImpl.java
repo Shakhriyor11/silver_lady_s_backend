@@ -31,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
     @Override
     @Transactional
@@ -46,8 +47,18 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("Cart is empty");
         }
 
+        // Lock product rows for the duration of this transaction so that
+        // concurrent checkouts for the same products are serialized.
+        List<Long> productIds = cartItems.stream()
+                .map(ci -> ci.getProduct().getId())
+                .distinct()
+                .toList();
+        Map<Long, Product> lockedProducts = productRepository.findAllByIdsForUpdate(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
         for (CartItem ci : cartItems) {
-            Product product = ci.getProduct();
+            Product product = lockedProducts.get(ci.getProduct().getId());
             if (!product.isActive()) {
                 throw new BadRequestException(
                         "Product is no longer available: " + product.getName());
@@ -56,6 +67,18 @@ public class OrderServiceImpl implements OrderService {
                 throw new BadRequestException(
                         "'" + product.getName() + "' mahsulotidan yetarli miqdor yo'q. " +
                         "Mavjud: " + product.getStockQuantity() + " dona, talab: " + ci.getQuantity() + " dona.");
+            }
+            if (ci.getSelectedSize() != null) {
+                ProductSizeEntry entry = product.getSizeEntries().stream()
+                        .filter(e -> e.getSize().equals(ci.getSelectedSize()))
+                        .findFirst()
+                        .orElseThrow(() -> new BadRequestException(
+                                "'" + ci.getSelectedSize() + "' o'lcham " + product.getName() + " uchun mavjud emas."));
+                if (entry.getQuantity() < ci.getQuantity()) {
+                    throw new BadRequestException(
+                            "'" + product.getName() + "' (" + ci.getSelectedSize() + ") uchun yetarli miqdor yo'q. " +
+                            "Mavjud: " + entry.getQuantity() + " dona, talab: " + ci.getQuantity() + " dona.");
+                }
             }
         }
 
@@ -70,10 +93,11 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal lineTotal = ci.getUnitPrice()
                     .multiply(BigDecimal.valueOf(ci.getQuantity()));
 
+            Product product = lockedProducts.get(ci.getProduct().getId());
             OrderItem item = new OrderItem();
             item.setOrder(order);
-            item.setProduct(ci.getProduct());
-            item.setProductName(ci.getProduct().getName());
+            item.setProduct(product);
+            item.setProductName(product.getName());
             item.setSelectedSize(ci.getSelectedSize());
             item.setUnitPrice(ci.getUnitPrice());
             item.setQuantity(ci.getQuantity());
@@ -87,8 +111,14 @@ public class OrderServiceImpl implements OrderService {
         Order saved = orderRepository.save(order);
 
         for (CartItem ci : cartItems) {
-            ci.getProduct().setStockQuantity(
-                    ci.getProduct().getStockQuantity() - ci.getQuantity());
+            Product product = lockedProducts.get(ci.getProduct().getId());
+            product.setStockQuantity(product.getStockQuantity() - ci.getQuantity());
+            if (ci.getSelectedSize() != null) {
+                product.getSizeEntries().stream()
+                        .filter(e -> e.getSize().equals(ci.getSelectedSize()))
+                        .findFirst()
+                        .ifPresent(e -> e.setQuantity(e.getQuantity() - ci.getQuantity()));
+            }
         }
 
         cartItemRepository.deleteByCartId(cart.getId());

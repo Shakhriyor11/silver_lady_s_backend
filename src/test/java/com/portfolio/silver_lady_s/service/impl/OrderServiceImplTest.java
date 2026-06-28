@@ -30,6 +30,7 @@ class OrderServiceImplTest {
     @Mock private CartRepository cartRepository;
     @Mock private CartItemRepository cartItemRepository;
     @Mock private UserRepository userRepository;
+    @Mock private ProductRepository productRepository;
 
     @InjectMocks private OrderServiceImpl orderService;
 
@@ -70,6 +71,7 @@ class OrderServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(cart));
         when(cartItemRepository.findByCartId(5L)).thenReturn(List.of(cartItem));
+        when(productRepository.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(product));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CheckoutRequest request = new CheckoutRequest();
@@ -95,6 +97,7 @@ class OrderServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(cart));
         when(cartItemRepository.findByCartId(5L)).thenReturn(List.of(cartItem));
+        when(productRepository.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(product));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CheckoutRequest request = new CheckoutRequest();
@@ -135,6 +138,7 @@ class OrderServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(cart));
         when(cartItemRepository.findByCartId(5L)).thenReturn(List.of(cartItem));
+        when(productRepository.findAllByIdsForUpdate(any())).thenReturn(List.of(product));
 
         CheckoutRequest request = new CheckoutRequest();
         request.setShippingAddress("Toshkent");

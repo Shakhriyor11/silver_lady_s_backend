@@ -30,7 +30,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/silver_lady_s_db
       SPRING_PROFILES_ACTIVE: prod
     volumes:
-      - uploads:/app/uploads
+      - ./uploads:/app/uploads
     restart: always
     networks:
       - backend
@@ -58,13 +58,13 @@ services:
       - ./certbot/www:/var/www/certbot:ro
       - ./frontend/dist:/var/www/frontend:ro
       - ./miniapp/dist:/var/www/miniapp:ro
+      - ./uploads:/var/www/uploads:ro
     restart: always
     networks:
       - backend
 
 volumes:
   pgdata:
-  uploads:
 
 networks:
   backend:

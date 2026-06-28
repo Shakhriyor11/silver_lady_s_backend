@@ -42,7 +42,7 @@ public class CategoryController {
     public CategoryDto update(@PathVariable Long id, @Valid @RequestBody UpdateCategoryRequest request) {
         return categoryService.update(id, request);
     }
-
+//products?categoryId=1
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
