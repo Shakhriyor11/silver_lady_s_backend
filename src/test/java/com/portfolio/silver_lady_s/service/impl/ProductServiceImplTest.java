@@ -204,9 +204,9 @@ class ProductServiceImplTest {
     // ── getProducts (full-text search) ────────────────────────────────────────────
 
     @Test
-    void getProducts_withSearchQuery_callsSearchActiveIds() {
+    void getProducts_withSearchQuery_callsFindActiveIds() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.searchActiveIds(eq("uzuk"), eq("%uzuk%"), eq(pageable)))
+        when(productRepository.findActiveIds("uzuk", null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(10L)));
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
@@ -214,15 +214,15 @@ class ProductServiceImplTest {
         PageResponse<ProductDto> result = productService.getProducts(null, "uzuk", null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).searchActiveIds("uzuk", "%uzuk%", pageable);
+        verify(productRepository).findActiveIds("uzuk", null, null, null, pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
         verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
     }
 
     @Test
-    void getProducts_withSearchAndCategory_callsSearchActiveByCategoryIds() {
+    void getProducts_withSearchAndCategory_callsFindActiveIds() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.searchActiveByCategoryIds(eq("uzuk"), eq("%uzuk%"), eq(1L), eq(pageable)))
+        when(productRepository.findActiveIds("uzuk", 1L, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(10L)));
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
@@ -230,7 +230,7 @@ class ProductServiceImplTest {
         PageResponse<ProductDto> result = productService.getProducts(1L, "uzuk", null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).searchActiveByCategoryIds("uzuk", "%uzuk%", 1L, pageable);
+        verify(productRepository).findActiveIds("uzuk", 1L, null, null, pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
     }
 
@@ -244,7 +244,7 @@ class ProductServiceImplTest {
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
-        verify(productRepository, never()).searchActiveIds(any(), any(), any());
+        verify(productRepository, never()).findActiveIds(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -259,17 +259,17 @@ class ProductServiceImplTest {
     }
 
     @Test
-    void getProducts_categoryOnly_callsFindIdsByCategoryActive() {
+    void getProducts_categoryOnly_callsFindActiveIds() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.findIdsByCategoryActive(eq(1L), eq(pageable)))
+        when(productRepository.findActiveIds(null, 1L, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(10L)));
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
 
         productService.getProducts(1L, null, null, null, pageable);
 
-        verify(productRepository).findIdsByCategoryActive(1L, pageable);
+        verify(productRepository).findActiveIds(null, 1L, null, null, pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
-        verify(productRepository, never()).searchActiveIds(any(), any(), any());
+        verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
     }
 }

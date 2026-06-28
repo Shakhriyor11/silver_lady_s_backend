@@ -46,8 +46,8 @@ public class ProductController {
     }
 
     @GetMapping("/sizes")
-    public List<SizeCountDto> getSizes() {
-        return productService.getAvailableSizes();
+    public List<SizeCountDto> getSizes(@RequestParam(required = false) Long categoryId) {
+        return productService.getAvailableSizes(categoryId);
     }
 
     @GetMapping("/archived")
@@ -93,6 +93,13 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         productService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/permanent")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> permanentDelete(@PathVariable Long id) {
+        productService.permanentDelete(id);
         return ResponseEntity.noContent().build();
     }
 

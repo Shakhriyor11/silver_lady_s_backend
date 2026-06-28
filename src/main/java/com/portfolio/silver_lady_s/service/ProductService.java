@@ -13,7 +13,7 @@ public interface ProductService {
 
     PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort, String sizeFilter, Pageable pageable);
 
-    List<SizeCountDto> getAvailableSizes();
+    List<SizeCountDto> getAvailableSizes(Long categoryId);
 
     PageResponse<ProductDto> getArchivedProducts(Pageable pageable);
 
@@ -26,6 +26,8 @@ public interface ProductService {
     ProductDto update(Long id, UpdateProductRequest req);
 
     void delete(Long id);
+
+    void permanentDelete(Long id);
 
     ProductDto restore(Long id);
 }

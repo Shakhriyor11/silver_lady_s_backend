@@ -39,7 +39,7 @@ public class CartServiceImpl implements CartService {
     public CartResponse addItem(Long userId, AddToCartRequest req) {
         Cart cart = getOrCreateCart(userId);
 
-        Product product = productRepository.findWithCategoryById(req.getProductId())
+        Product product = productRepository.findByIdAndActiveTrueForCart(req.getProductId())
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + req.getProductId()));
 
         String size = normalizeSize(req.getSelectedSize());
