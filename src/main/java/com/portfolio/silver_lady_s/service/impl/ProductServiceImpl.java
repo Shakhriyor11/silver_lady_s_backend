@@ -220,7 +220,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void delete(Long id) {
-        Product p = productRepository.findWithCategoryById(id)
+        Product p = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + id));
         p.setActive(false);
         productRepository.save(p);
