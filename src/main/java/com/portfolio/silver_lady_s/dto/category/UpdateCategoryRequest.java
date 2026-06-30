@@ -17,4 +17,5 @@ public class UpdateCategoryRequest {
     @Size(max = 80) private String nameEn;
 
     private Long parentId;
+    private boolean showSizeFilter;
 }
