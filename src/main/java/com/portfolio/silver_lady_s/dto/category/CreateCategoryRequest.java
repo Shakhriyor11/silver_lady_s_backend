@@ -17,4 +17,5 @@ public class CreateCategoryRequest {
     @Size(max = 80) private String nameEn;
 
     private Long parentId;
+    private boolean showSizeFilter;
 }

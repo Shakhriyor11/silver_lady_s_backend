@@ -60,6 +60,7 @@ public class CategoryServiceImpl implements CategoryService {
         c.setNameUz(request.getNameUz());
         c.setNameRu(request.getNameRu());
         c.setNameEn(request.getNameEn());
+        c.setShowSizeFilter(request.isShowSizeFilter());
 
         if (parentId != null) {
             Category parent = categoryRepository.findById(parentId)
@@ -92,6 +93,7 @@ public class CategoryServiceImpl implements CategoryService {
         c.setNameUz(request.getNameUz());
         c.setNameRu(request.getNameRu());
         c.setNameEn(request.getNameEn());
+        c.setShowSizeFilter(request.isShowSizeFilter());
 
         if (parentId == null) {
             c.setParent(null);

@@ -31,6 +31,9 @@ public class Category extends BaseTimeEntity {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder = 0;
 
+    @Column(name = "show_size_filter", nullable = false)
+    private boolean showSizeFilter = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Category parent;
