@@ -61,7 +61,9 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ProductDto getById(@PathVariable Long id, Authentication authentication) {
-        ProductDto dto = productService.getById(id);
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        ProductDto dto = isAdmin ? productService.getByIdAny(id) : productService.getById(id);
         if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal up) {
             productViewService.recordView(up.getUserId(), id);
         }
@@ -89,10 +91,10 @@ public class ProductController {
         return productService.update(id, req);
     }
 
-    @DeleteMapping("/{id}")
+    @PatchMapping("/{id}/archive")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        productService.delete(id);
+    public ResponseEntity<Void> archive(@PathVariable Long id) {
+        productService.archive(id);
         return ResponseEntity.noContent().build();
     }
 

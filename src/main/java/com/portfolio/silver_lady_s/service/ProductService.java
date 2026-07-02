@@ -19,13 +19,15 @@ public interface ProductService {
 
     ProductDto getById(Long id);
 
+    ProductDto getByIdAny(Long id);
+
     List<ProductDto> getSimilarProducts(Long productId, int limit);
 
     ProductDto create(CreateProductRequest req);
 
     ProductDto update(Long id, UpdateProductRequest req);
 
-    void delete(Long id);
+    void archive(Long id);
 
     void permanentDelete(Long id);
 
