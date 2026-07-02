@@ -9,6 +9,8 @@ import com.portfolio.silver_lady_s.entity.Product;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -33,6 +36,8 @@ class ProductServiceImplTest {
 
     @Mock private ProductRepository productRepository;
     @Mock private CategoryRepository categoryRepository;
+    @Mock private EntityManager em;
+    @Mock private Query nativeQuery;
 
     @InjectMocks private ProductServiceImpl productService;
 
@@ -147,24 +152,26 @@ class ProductServiceImplTest {
                 .isInstanceOf(NotFoundException.class);
     }
 
-    // ── delete (soft) ─────────────────────────────────────────────────────────────
+    // ── archive (soft delete) ─────────────────────────────────────────────────────
 
     @Test
-    void delete_setsActiveFalse() {
-        when(productRepository.findWithCategoryById(10L)).thenReturn(Optional.of(product));
+    void archive_setsActiveFalse() {
+        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
         when(productRepository.save(product)).thenReturn(product);
+        when(em.createNativeQuery(anyString())).thenReturn(nativeQuery);
+        when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
 
-        productService.delete(10L);
+        productService.archive(10L);
 
         assertThat(product.isActive()).isFalse();
         verify(productRepository).save(product);
     }
 
     @Test
-    void delete_notFound_throwsNotFoundException() {
-        when(productRepository.findWithCategoryById(99L)).thenReturn(Optional.empty());
+    void archive_notFound_throwsNotFoundException() {
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> productService.delete(99L))
+        assertThatThrownBy(() -> productService.archive(99L))
                 .isInstanceOf(NotFoundException.class);
     }
 
