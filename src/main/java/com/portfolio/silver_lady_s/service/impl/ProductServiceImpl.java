@@ -96,6 +96,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    public ProductDto getByIdAny(Long id) {
+        return ProductDto.from(productRepository.findByIdWithImages(id)
+                .orElseThrow(() -> new NotFoundException("Product not found: id=" + id)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ProductDto> getSimilarProducts(Long productId, int limit) {
         Product product = productRepository.findByIdAndActiveTrue(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + productId));
@@ -219,11 +226,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void delete(Long id) {
+    public void archive(Long id) {
         Product p = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + id));
         p.setActive(false);
         productRepository.save(p);
+        em.createNativeQuery("DELETE FROM cart_items WHERE product_id = :id")
+                .setParameter("id", id).executeUpdate();
     }
 
     @Override

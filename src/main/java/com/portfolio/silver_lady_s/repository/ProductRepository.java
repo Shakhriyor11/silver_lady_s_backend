@@ -17,12 +17,16 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
 
     // ── Simple list views (no filter — single-step, no JOIN) ─────────────────
 
+    @EntityGraph(attributePaths = "categories")
     Page<Product> findAllByActiveTrueOrderByIdDesc(Pageable pageable);
 
+    @EntityGraph(attributePaths = "categories")
     Page<Product> findAllByActiveTrueOrderByPriceAsc(Pageable pageable);
 
+    @EntityGraph(attributePaths = "categories")
     Page<Product> findAllByActiveTrueOrderByPriceDesc(Pageable pageable);
 
+    @EntityGraph(attributePaths = "categories")
     Page<Product> findAllByActiveFalseOrderByIdDesc(Pageable pageable);
 
     // ── Checkout: pessimistic lock (SELECT … FOR UPDATE) ─────────────────────
@@ -48,6 +52,13 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             WHERE p.id = :id AND p.active = true
             """)
     Optional<Product> findByIdAndActiveTrueWithImages(@Param("id") Long id);
+
+    @Query("""
+            SELECT DISTINCT p FROM Product p
+            LEFT JOIN FETCH p.categories
+            WHERE p.id = :id
+            """)
+    Optional<Product> findByIdWithImages(@Param("id") Long id);
 
     @EntityGraph(attributePaths = "categories")
     Optional<Product> findByIdAndActiveTrue(Long id);
