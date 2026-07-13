@@ -83,8 +83,8 @@ public class ProductFilterRepositoryImpl implements ProductFilterRepository {
     }
 
     private static String resolveOrderBy(String sort, String search) {
-        if ("price_asc".equals(sort))  return "ORDER BY " + EFFECTIVE_PRICE + " ASC\n";
-        if ("price_desc".equals(sort)) return "ORDER BY " + EFFECTIVE_PRICE + " DESC\n";
+        if ("price_asc".equals(sort))  return "ORDER BY " + EFFECTIVE_PRICE + " ASC, p.id DESC\n";
+        if ("price_desc".equals(sort)) return "ORDER BY " + EFFECTIVE_PRICE + " DESC, p.id DESC\n";
         if (search != null) {
             return """
                     ORDER BY GREATEST(
