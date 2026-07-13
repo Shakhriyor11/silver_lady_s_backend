@@ -1,6 +1,7 @@
 package com.portfolio.silver_lady_s.controller;
 
 import com.portfolio.silver_lady_s.dto.PageResponse;
+import com.portfolio.silver_lady_s.dto.product.CategoryDiscountRequest;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.SizeCountDto;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -109,5 +111,14 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ProductDto restore(@PathVariable Long id) {
         return productService.restore(id);
+    }
+
+    @PatchMapping("/category/{categoryId}/discount")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Integer>> applyCategoryDiscount(
+            @PathVariable Long categoryId,
+            @Valid @RequestBody CategoryDiscountRequest req) {
+        int updated = productService.applyCategoryDiscount(categoryId, req.getDiscountPercent(), req.getDiscountAmount());
+        return ResponseEntity.ok(Map.of("updated", updated));
     }
 }

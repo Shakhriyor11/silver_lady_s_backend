@@ -77,6 +77,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
 
     boolean existsByCategoriesId(Long categoryId);
 
+    @EntityGraph(attributePaths = "categories")
+    List<Product> findAllByCategoriesId(Long categoryId);
+
     // ── Similar & Recommendation queries ─────────────────────────────────────
 
     @Query("""
