@@ -104,7 +104,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductDto> getSimilarProducts(Long productId, int limit) {
-        Product product = productRepository.findByIdAndActiveTrue(productId)
+        Product product = productRepository.findWithCategoryById(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + productId));
 
         List<Long> categoryIds = product.getCategories().stream()
