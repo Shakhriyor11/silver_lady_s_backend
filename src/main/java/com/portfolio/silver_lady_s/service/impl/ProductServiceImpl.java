@@ -9,6 +9,7 @@ import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
 import com.portfolio.silver_lady_s.entity.Category;
 import com.portfolio.silver_lady_s.entity.Product;
 import com.portfolio.silver_lady_s.entity.ProductSizeEntry;
+import com.portfolio.silver_lady_s.exception.BadRequestException;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -254,6 +256,26 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new NotFoundException("Inactive product not found: id=" + id));
         p.setActive(true);
         return ProductDto.from(productRepository.save(p));
+    }
+
+    @Override
+    @Transactional
+    public int applyCategoryDiscount(Long categoryId, Integer discountPercent, BigDecimal discountAmount) {
+        if (discountPercent != null && discountAmount != null) {
+            throw new BadRequestException("Faqat foiz yoki summadan bittasini tanlang");
+        }
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new NotFoundException("Category not found: id=" + categoryId);
+        }
+        List<Product> products = productRepository.findAllByCategoriesId(categoryId);
+        for (Product p : products) {
+            p.setDiscountPercent(discountPercent);
+            p.setDiscountAmount(discountAmount);
+            p.setDiscountStartsAt(null);
+            p.setDiscountEndsAt(null);
+        }
+        productRepository.saveAll(products);
+        return products.size();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
