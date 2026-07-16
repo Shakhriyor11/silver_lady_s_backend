@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -260,7 +261,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public int applyCategoryDiscount(Long categoryId, Integer discountPercent, BigDecimal discountAmount) {
+    public int applyCategoryDiscount(Long categoryId, Integer discountPercent, BigDecimal discountAmount,
+                                      Instant discountStartsAt, Instant discountEndsAt) {
         if (discountPercent != null && discountAmount != null) {
             throw new BadRequestException("Faqat foiz yoki summadan bittasini tanlang");
         }
@@ -271,8 +273,8 @@ public class ProductServiceImpl implements ProductService {
         for (Product p : products) {
             p.setDiscountPercent(discountPercent);
             p.setDiscountAmount(discountAmount);
-            p.setDiscountStartsAt(null);
-            p.setDiscountEndsAt(null);
+            p.setDiscountStartsAt(discountStartsAt);
+            p.setDiscountEndsAt(discountEndsAt);
         }
         productRepository.saveAll(products);
         return products.size();

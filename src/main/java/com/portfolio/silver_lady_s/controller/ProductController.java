@@ -118,7 +118,8 @@ public class ProductController {
     public ResponseEntity<Map<String, Integer>> applyCategoryDiscount(
             @PathVariable Long categoryId,
             @Valid @RequestBody CategoryDiscountRequest req) {
-        int updated = productService.applyCategoryDiscount(categoryId, req.getDiscountPercent(), req.getDiscountAmount());
+        int updated = productService.applyCategoryDiscount(categoryId, req.getDiscountPercent(), req.getDiscountAmount(),
+                req.getDiscountStartsAt(), req.getDiscountEndsAt());
         return ResponseEntity.ok(Map.of("updated", updated));
     }
 }

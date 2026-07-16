@@ -8,6 +8,7 @@ import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 public interface ProductService {
@@ -34,5 +35,6 @@ public interface ProductService {
 
     ProductDto restore(Long id);
 
-    int applyCategoryDiscount(Long categoryId, Integer discountPercent, BigDecimal discountAmount);
+    int applyCategoryDiscount(Long categoryId, Integer discountPercent, BigDecimal discountAmount,
+                               Instant discountStartsAt, Instant discountEndsAt);
 }
