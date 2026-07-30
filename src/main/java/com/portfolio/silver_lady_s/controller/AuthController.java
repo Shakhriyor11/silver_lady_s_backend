@@ -3,6 +3,7 @@ package com.portfolio.silver_lady_s.controller;
 import com.portfolio.silver_lady_s.dto.auth.AuthResponse;
 import com.portfolio.silver_lady_s.dto.auth.LoginRequest;
 import com.portfolio.silver_lady_s.dto.auth.RefreshRequest;
+import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
 import com.portfolio.silver_lady_s.security.CurrentUser;
 import com.portfolio.silver_lady_s.service.AuthService;
 import jakarta.validation.Valid;
@@ -20,6 +21,11 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest req) {
         return authService.login(req);
+    }
+
+    @PostMapping("/register")
+    public AuthResponse register(@Valid @RequestBody RegisterRequest req) {
+        return authService.register(req);
     }
 
     @PostMapping("/refresh")

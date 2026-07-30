@@ -22,6 +22,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
             SELECT u FROM User u
             WHERE u.role = com.portfolio.silver_lady_s.entity.UserRole.USER
+              AND u.deletedAt IS NULL
               AND (:q IS NULL OR :q = ''
                    OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%'))
                    OR LOWER(u.email)    LIKE LOWER(CONCAT('%', :q, '%')))

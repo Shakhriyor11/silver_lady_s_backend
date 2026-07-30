@@ -2,10 +2,13 @@ package com.portfolio.silver_lady_s.service;
 
 import com.portfolio.silver_lady_s.dto.auth.AuthResponse;
 import com.portfolio.silver_lady_s.dto.auth.LoginRequest;
+import com.portfolio.silver_lady_s.dto.auth.RegisterRequest;
 
 public interface AuthService {
 
     AuthResponse login(LoginRequest req);
+
+    AuthResponse register(RegisterRequest req);
 
     AuthResponse refresh(String refreshToken);
 

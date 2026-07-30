@@ -17,9 +17,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Set;
 
 /**
- * IP manzili bo'yicha admin login endpointini himoyalaydi.
+ * IP manzili bo'yicha admin login va register endpointlarini himoyalaydi.
  * Har IP uchun 1 daqiqada maksimal 10 ta urinish.
  * Limitdan oshilsa 429 Too Many Requests qaytaradi.
  * app.rate-limit.enabled=false bilan o'chiriladi (masalan, test muhitida).
@@ -38,6 +39,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int    MAX_REQUESTS_PER_MINUTE = 10;
     private static final String LOGIN_PATH = "/api/admin/auth/login";
+    private static final String REGISTER_PATH = "/api/admin/auth/register";
+    private static final Set<String> RATE_LIMITED_PATHS = Set.of(LOGIN_PATH, REGISTER_PATH);
 
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
@@ -49,7 +52,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        if (!enabled || !request.getRequestURI().equals(LOGIN_PATH)) {
+        if (!enabled || !RATE_LIMITED_PATHS.contains(request.getRequestURI())) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -36,6 +36,9 @@ public class User extends BaseTimeEntity {
     @Column(length = 40)
     private String phone;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(nullable = false, columnDefinition = "boolean not null default false")
     private boolean phoneVerified = false;
 
@@ -72,4 +75,7 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private UserRole role = UserRole.USER;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 }

@@ -75,7 +75,8 @@ public class SecurityConfig {
 
                         // authenticated users
                         .requestMatchers("/api/cart/**").authenticated()
-                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/wishlist/**").authenticated()
+                        .requestMatchers("/api/users/me/**").authenticated()
                         .requestMatchers("/api/recommendations/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/contact").authenticated()
                         .requestMatchers(HttpMethod.GET,  "/api/contact/mine").authenticated()
@@ -84,6 +85,7 @@ public class SecurityConfig {
 
                         // admin only
                         .requestMatchers(HttpMethod.GET,   "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,   "/api/orders").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,   "/api/orders/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status").hasRole("ADMIN")
