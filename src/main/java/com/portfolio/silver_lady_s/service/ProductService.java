@@ -13,7 +13,8 @@ import java.util.List;
 
 public interface ProductService {
 
-    PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort, String sizeFilter, Pageable pageable);
+    PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort, String sizeFilter,
+                                          boolean includeArchived, Pageable pageable);
 
     List<SizeCountDto> getAvailableSizes(Long categoryId);
 

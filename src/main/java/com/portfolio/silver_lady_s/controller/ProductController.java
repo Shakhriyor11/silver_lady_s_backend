@@ -40,11 +40,15 @@ public class ProductController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String sizeFilter,
+            @RequestParam(defaultValue = "false") boolean includeArchived,
             @RequestParam(defaultValue = "0")   @Min(0)          int page,
-            @RequestParam(defaultValue = "20")  @Min(1) @Max(500) int size
+            @RequestParam(defaultValue = "20")  @Min(1) @Max(500) int size,
+            Authentication authentication
     ) {
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         Pageable pageable = PageRequest.of(page, size);
-        return productService.getProducts(categoryId, search, sort, sizeFilter, pageable);
+        return productService.getProducts(categoryId, search, sort, sizeFilter, includeArchived && isAdmin, pageable);
     }
 
     @GetMapping("/sizes")

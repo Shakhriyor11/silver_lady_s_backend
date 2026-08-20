@@ -29,6 +29,17 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     @EntityGraph(attributePaths = "categories")
     Page<Product> findAllByActiveFalseOrderByIdDesc(Pageable pageable);
 
+    // ── Admin view: active + archived together ────────────────────────────────
+
+    @EntityGraph(attributePaths = "categories")
+    Page<Product> findAllByOrderByIdDesc(Pageable pageable);
+
+    @EntityGraph(attributePaths = "categories")
+    Page<Product> findAllByOrderByPriceAsc(Pageable pageable);
+
+    @EntityGraph(attributePaths = "categories")
+    Page<Product> findAllByOrderByPriceDesc(Pageable pageable);
+
     // ── Checkout: pessimistic lock (SELECT … FOR UPDATE) ─────────────────────
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
