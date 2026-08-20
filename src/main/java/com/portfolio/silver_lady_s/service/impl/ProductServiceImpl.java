@@ -47,18 +47,22 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductDto> getProducts(Long categoryId, String search, String sort,
-                                                String sizeFilter, Pageable pageable) {
+                                                String sizeFilter, boolean includeArchived, Pageable pageable) {
         String q    = StringUtils.hasText(search)     ? search.trim()     : null;
         String size = StringUtils.hasText(sizeFilter) ? sizeFilter.trim() : null;
 
         if (q == null && categoryId == null && size == null) {
-            Page<Product> page = "price_asc".equals(sort)  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
-                               : "price_desc".equals(sort) ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
-                               :                             productRepository.findAllByActiveTrueOrderByIdDesc(pageable);
+            Page<Product> page = includeArchived
+                    ? ("price_asc".equals(sort)  ? productRepository.findAllByOrderByPriceAsc(pageable)
+                     : "price_desc".equals(sort) ? productRepository.findAllByOrderByPriceDesc(pageable)
+                     :                             productRepository.findAllByOrderByIdDesc(pageable))
+                    : ("price_asc".equals(sort)  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
+                     : "price_desc".equals(sort) ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
+                     :                             productRepository.findAllByActiveTrueOrderByIdDesc(pageable));
             return new PageResponse<>(page.map(ProductDto::from));
         }
 
-        Page<Long> idPage = productRepository.findActiveIds(q, categoryId, size, sort, pageable);
+        Page<Long> idPage = productRepository.findActiveIds(q, categoryId, size, sort, includeArchived, pageable);
         return fetchByIds(idPage, pageable);
     }
 

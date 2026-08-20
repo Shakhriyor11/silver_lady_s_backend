@@ -31,8 +31,9 @@ public class ProductFilterRepositoryImpl implements ProductFilterRepository {
             END""";
 
     @Override
-    public Page<Long> findActiveIds(String search, Long categoryId, String size, String sort, Pageable pageable) {
-        StringBuilder where = new StringBuilder("WHERE p.active = true\n");
+    public Page<Long> findActiveIds(String search, Long categoryId, String size, String sort,
+                                     boolean includeArchived, Pageable pageable) {
+        StringBuilder where = new StringBuilder(includeArchived ? "WHERE 1=1\n" : "WHERE p.active = true\n");
         Map<String, Object> params = new LinkedHashMap<>();
 
         if (categoryId != null) {
