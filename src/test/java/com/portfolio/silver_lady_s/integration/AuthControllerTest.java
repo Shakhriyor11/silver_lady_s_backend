@@ -37,6 +37,22 @@ class AuthControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void login_asCashier_succeeds() throws Exception {
+        createUser("cashier@example.com", "Secret123", UserRole.CASHIER);
+
+        LoginRequest req = new LoginRequest();
+        req.setEmail("cashier@example.com");
+        req.setPassword("Secret123");
+
+        mockMvc.perform(post("/api/admin/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(toJson(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isString())
+                .andExpect(jsonPath("$.refreshToken").isString());
+    }
+
+    @Test
     void login_regularUser_returns401() throws Exception {
         createUser("user@example.com", "Secret123", UserRole.USER);
 

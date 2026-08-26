@@ -60,6 +60,7 @@ public abstract class AbstractIntegrationTest {
              Statement stmt = conn.createStatement()) {
             stmt.execute("""
                     TRUNCATE TABLE
+                        sale_items, sales,
                         order_items, orders,
                         cart_items, carts,
                         product_views, product_images, products,
@@ -127,6 +128,11 @@ public abstract class AbstractIntegrationTest {
     protected String adminToken() throws Exception {
         createUser("admin@test.com", "Admin1234!", UserRole.ADMIN);
         return loginToken("admin@test.com", "Admin1234!");
+    }
+
+    protected String cashierToken() throws Exception {
+        createUser("cashier@test.com", "Cashier1234!", UserRole.CASHIER);
+        return loginToken("cashier@test.com", "Cashier1234!");
     }
 
     protected String toJson(Object obj) throws Exception {

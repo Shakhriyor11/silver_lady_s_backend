@@ -29,6 +29,9 @@ public class CreateProductRequest {
     @Min(0)
     private Integer stockQuantity = 0;
 
+    @Size(max = 64)
+    private String barcode;
+
     @NotNull @Positive
     private BigDecimal price;
 

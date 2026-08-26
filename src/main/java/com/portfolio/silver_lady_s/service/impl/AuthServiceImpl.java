@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid credentials");
         }
 
-        if (u.getRole() != UserRole.ADMIN) {
+        if (u.getRole() != UserRole.ADMIN && u.getRole() != UserRole.CASHIER) {
             throw new UnauthorizedException("Access denied");
         }
 

@@ -84,6 +84,7 @@ public class SecurityConfig {
 
                         // admin only
                         .requestMatchers(HttpMethod.GET,   "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,  "/api/users/cashiers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,   "/api/orders").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,   "/api/orders/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status").hasRole("ADMIN")
@@ -103,6 +104,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/products/**").hasRole("ADMIN")
+
+                        // POS (kassa) — cashier va admin uchun
+                        .requestMatchers(HttpMethod.GET,  "/api/pos/products/lookup").hasAnyRole("CASHIER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/pos/sales").hasAnyRole("CASHIER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET,  "/api/pos/sales").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,  "/api/pos/sales/*").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

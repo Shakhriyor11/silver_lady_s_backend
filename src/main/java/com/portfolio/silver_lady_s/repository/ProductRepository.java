@@ -46,6 +46,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     @Query("SELECT p FROM Product p WHERE p.id IN :ids")
     List<Product> findAllByIdsForUpdate(@Param("ids") List<Long> ids);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.barcode IN :barcodes")
+    List<Product> findAllByBarcodesForUpdate(@Param("barcodes") List<String> barcodes);
+
     // ── Step-2 fetch with JOIN FETCH (used after ID pagination) ──────────────
 
     @Query("""
@@ -84,9 +88,16 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     @Query("SELECT p FROM Product p WHERE p.id = :id AND p.active = true")
     Optional<Product> findByIdAndActiveTrueForCart(@Param("id") Long id);
 
+    @EntityGraph(attributePaths = "sizeEntries")
+    Optional<Product> findByBarcodeAndActiveTrue(String barcode);
+
     // ── Existence checks ──────────────────────────────────────────────────────
 
     boolean existsByCategoriesId(Long categoryId);
+
+    boolean existsByBarcode(String barcode);
+
+    boolean existsByBarcodeAndIdNot(String barcode, Long id);
 
     @EntityGraph(attributePaths = "categories")
     List<Product> findAllByCategoriesId(Long categoryId);

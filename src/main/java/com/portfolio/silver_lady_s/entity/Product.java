@@ -45,6 +45,9 @@ public class Product extends BaseTimeEntity {
     @Column(name = "stock_quantity", nullable = false)
     private int stockQuantity = 0;
 
+    @Column(name = "barcode", length = 64, unique = true)
+    private String barcode;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal price;
 

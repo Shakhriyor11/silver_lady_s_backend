@@ -103,3 +103,9 @@ app:
       # Parol HECH QACHON bu yerda yozilmaydi — faqat .env orqali
       password: ${BOOTSTRAP_ADMIN_PASSWORD:}
       full-name: ${BOOTSTRAP_ADMIN_FULL_NAME:Main Admin}
+
+  seed:
+    products:
+      # Faqat lokal test uchun — prod profilida hech qachon ishlamaydi (ProductSeeder @Profile("!prod"))
+      enabled: ${SEED_PRODUCTS_ENABLED:false}
+      count: ${SEED_PRODUCTS_COUNT:1000}

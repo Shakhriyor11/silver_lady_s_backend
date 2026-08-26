@@ -1,10 +1,13 @@
 package com.portfolio.silver_lady_s.service.impl;
 
 import com.portfolio.silver_lady_s.dto.user.ChangePasswordRequest;
+import com.portfolio.silver_lady_s.dto.user.CreateCashierRequest;
 import com.portfolio.silver_lady_s.dto.user.UpdateProfileRequest;
 import com.portfolio.silver_lady_s.dto.user.UserProfileResponse;
 import com.portfolio.silver_lady_s.entity.User;
+import com.portfolio.silver_lady_s.entity.UserRole;
 import com.portfolio.silver_lady_s.exception.BadRequestException;
+import com.portfolio.silver_lady_s.exception.ConflictException;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import com.portfolio.silver_lady_s.service.UserService;
@@ -61,6 +64,24 @@ public class UserServiceImpl implements UserService {
     public Page<UserProfileResponse> listUsers(String q, Pageable pageable) {
         return userRepository.searchRegularUsers(q == null ? "" : q.trim(), pageable)
                 .map(this::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public UserProfileResponse createCashier(CreateCashierRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new ConflictException("User with this email already exists: " + email);
+        }
+
+        User u = new User();
+        u.setEmail(email);
+        u.setFullName(req.getFullName().trim());
+        u.setPasswordHash(passwordEncoder.encode(req.getPassword()));
+        u.setRole(UserRole.CASHIER);
+
+        return toResponse(userRepository.save(u));
     }
 
     private UserProfileResponse toResponse(User u) {

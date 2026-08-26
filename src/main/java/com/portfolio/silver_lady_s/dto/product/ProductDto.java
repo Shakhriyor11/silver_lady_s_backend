@@ -2,11 +2,11 @@ package com.portfolio.silver_lady_s.dto.product;
 
 import com.portfolio.silver_lady_s.entity.Category;
 import com.portfolio.silver_lady_s.entity.Product;
+import com.portfolio.silver_lady_s.util.PriceCalculator;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +25,7 @@ public class ProductDto {
     private String descriptionRu;
     private String descriptionEn;
     private int stockQuantity;
+    private String barcode;
     private BigDecimal price;
     private BigDecimal salePrice;
     private Integer discountPercent;
@@ -59,8 +60,9 @@ public class ProductDto {
                 p.getDescriptionRu(),
                 p.getDescriptionEn(),
                 p.getStockQuantity(),
+                p.getBarcode(),
                 p.getPrice(),
-                computeSalePrice(p),
+                PriceCalculator.computeSalePrice(p),
                 p.getDiscountPercent(),
                 p.getDiscountAmount(),
                 p.getDiscountStartsAt(),
@@ -72,27 +74,6 @@ public class ProductDto {
                 p.getUpdatedAt(),
                 imgs
         );
-    }
-
-    private static BigDecimal computeSalePrice(Product p) {
-        BigDecimal price = p.getPrice();
-        Instant now = Instant.now();
-
-        boolean inWindow = (p.getDiscountStartsAt() == null || !now.isBefore(p.getDiscountStartsAt()))
-                        && (p.getDiscountEndsAt()   == null || now.isBefore(p.getDiscountEndsAt()));
-
-        if (!inWindow) return price;
-
-        if (p.getDiscountPercent() != null && p.getDiscountPercent() > 0) {
-            BigDecimal factor = BigDecimal.ONE.subtract(
-                    BigDecimal.valueOf(p.getDiscountPercent()).divide(BigDecimal.valueOf(100)));
-            return price.multiply(factor).setScale(2, RoundingMode.HALF_UP);
-        }
-        if (p.getDiscountAmount() != null && p.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal result = price.subtract(p.getDiscountAmount());
-            return result.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : result.setScale(2, RoundingMode.HALF_UP);
-        }
-        return price;
     }
 
     @Getter

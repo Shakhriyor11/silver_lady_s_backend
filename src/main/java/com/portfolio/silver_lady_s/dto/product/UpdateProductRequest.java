@@ -29,6 +29,9 @@ public class UpdateProductRequest {
     @Min(0)
     private Integer stockQuantity;
 
+    @Size(max = 64)
+    private String barcode;
+
     @NotNull @Positive
     private BigDecimal price;
 

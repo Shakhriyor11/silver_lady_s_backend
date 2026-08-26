@@ -1,6 +1,7 @@
 package com.portfolio.silver_lady_s.controller;
 
 import com.portfolio.silver_lady_s.dto.user.ChangePasswordRequest;
+import com.portfolio.silver_lady_s.dto.user.CreateCashierRequest;
 import com.portfolio.silver_lady_s.dto.user.UpdateProfileRequest;
 import com.portfolio.silver_lady_s.dto.user.UserProfileResponse;
 import com.portfolio.silver_lady_s.security.CurrentUser;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/users")
@@ -51,5 +54,12 @@ public class UserController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         return userService.listUsers(q, PageRequest.of(page, size));
+    }
+
+    @PostMapping("/cashiers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserProfileResponse> createCashier(@Valid @RequestBody CreateCashierRequest req) {
+        UserProfileResponse created = userService.createCashier(req);
+        return ResponseEntity.created(URI.create("/api/users/" + created.getId())).body(created);
     }
 }

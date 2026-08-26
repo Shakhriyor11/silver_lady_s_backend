@@ -1,6 +1,7 @@
 package com.portfolio.silver_lady_s.service;
 
 import com.portfolio.silver_lady_s.dto.user.ChangePasswordRequest;
+import com.portfolio.silver_lady_s.dto.user.CreateCashierRequest;
 import com.portfolio.silver_lady_s.dto.user.UpdateProfileRequest;
 import com.portfolio.silver_lady_s.dto.user.UserProfileResponse;
 import org.springframework.data.domain.Page;
@@ -11,4 +12,5 @@ public interface UserService {
     UserProfileResponse updateMe(Long userId, UpdateProfileRequest req);
     void changePassword(Long userId, ChangePasswordRequest req);
     Page<UserProfileResponse> listUsers(String q, Pageable pageable);
+    UserProfileResponse createCashier(CreateCashierRequest req);
 }

@@ -248,6 +248,47 @@ class ProductControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void updateProduct_setBarcode_persistsBarcode() throws Exception {
+        String token = adminToken();
+        Product p = saveProduct("Uzuk", "100000.00");
+
+        UpdateProductRequest req = new UpdateProductRequest();
+        req.setName("Uzuk");
+        req.setPrice(new BigDecimal("100000.00"));
+        req.setCategoryIds(List.of(category.getId()));
+        req.setBarcode("4780123456789");
+
+        mockMvc.perform(put("/api/products/" + p.getId())
+                        .header("Authorization", bearer(token))
+                        .contentType(APPLICATION_JSON)
+                        .content(toJson(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.barcode").value("4780123456789"));
+    }
+
+    @Test
+    void updateProduct_duplicateBarcode_returns409() throws Exception {
+        String token = adminToken();
+        Product existing = saveProduct("Boshqa uzuk", "100000.00");
+        existing.setBarcode("4780123456789");
+        productRepository.save(existing);
+
+        Product p = saveProduct("Uzuk", "100000.00");
+
+        UpdateProductRequest req = new UpdateProductRequest();
+        req.setName("Uzuk");
+        req.setPrice(new BigDecimal("100000.00"));
+        req.setCategoryIds(List.of(category.getId()));
+        req.setBarcode("4780123456789");
+
+        mockMvc.perform(put("/api/products/" + p.getId())
+                        .header("Authorization", bearer(token))
+                        .contentType(APPLICATION_JSON)
+                        .content(toJson(req)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void updateProduct_notFound_returns404() throws Exception {
         String token = adminToken();
 

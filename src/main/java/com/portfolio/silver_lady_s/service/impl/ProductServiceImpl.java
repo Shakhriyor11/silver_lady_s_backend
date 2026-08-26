@@ -10,6 +10,7 @@ import com.portfolio.silver_lady_s.entity.Category;
 import com.portfolio.silver_lady_s.entity.Product;
 import com.portfolio.silver_lady_s.entity.ProductSizeEntry;
 import com.portfolio.silver_lady_s.exception.BadRequestException;
+import com.portfolio.silver_lady_s.exception.ConflictException;
 import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
@@ -142,6 +143,7 @@ public class ProductServiceImpl implements ProductService {
         p.setDescriptionRu(req.getDescriptionRu());
         p.setDescriptionEn(req.getDescriptionEn());
         p.setPrice(req.getPrice());
+        p.setBarcode(resolveBarcode(req.getBarcode(), null));
         p.setDiscountPercent(req.getDiscountPercent());
         p.setDiscountAmount(req.getDiscountAmount());
         p.setDiscountStartsAt(req.getDiscountStartsAt());
@@ -184,6 +186,7 @@ public class ProductServiceImpl implements ProductService {
         p.setDescriptionRu(req.getDescriptionRu());
         p.setDescriptionEn(req.getDescriptionEn());
         p.setPrice(req.getPrice());
+        p.setBarcode(resolveBarcode(req.getBarcode(), id));
         p.setDiscountPercent(req.getDiscountPercent());
         p.setDiscountAmount(req.getDiscountAmount());
         p.setDiscountStartsAt(req.getDiscountStartsAt());
@@ -285,6 +288,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+
+    private String resolveBarcode(String rawBarcode, Long productId) {
+        if (!StringUtils.hasText(rawBarcode)) return null;
+        String barcode = rawBarcode.trim();
+
+        boolean clash = productId == null
+                ? productRepository.existsByBarcode(barcode)
+                : productRepository.existsByBarcodeAndIdNot(barcode, productId);
+        if (clash) {
+            throw new ConflictException("Barcode already in use by another product: " + barcode);
+        }
+        return barcode;
+    }
 
     private List<Category> resolveCategories(List<Long> ids) {
         List<Category> cats = categoryRepository.findAllById(ids);

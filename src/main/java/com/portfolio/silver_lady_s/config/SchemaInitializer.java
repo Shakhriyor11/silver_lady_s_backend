@@ -28,6 +28,8 @@ public class SchemaInitializer implements ApplicationRunner {
         runSafe("ALTER TABLE about_us ADD COLUMN IF NOT EXISTS created_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT NOW()");
         runSafe("ALTER TABLE about_us ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT NOW()");
 
+        runSafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(64)");
+
         // ── pg_trgm full-text search indexes ─────────────────────────────────────
         try {
             jdbc.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm");
@@ -40,6 +42,11 @@ public class SchemaInitializer implements ApplicationRunner {
             jdbc.execute("""
                     CREATE INDEX IF NOT EXISTS idx_product_desc_trgm
                     ON products USING GIN (description gin_trgm_ops)
+                    """);
+
+            jdbc.execute("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS uk_products_barcode
+                    ON products (barcode)
                     """);
 
             log.info("pg_trgm extension and search indexes are ready");
