@@ -2,10 +2,12 @@ package com.portfolio.silver_lady_s.bootstrap;
 
 import com.portfolio.silver_lady_s.entity.AboutUs;
 import com.portfolio.silver_lady_s.entity.ContactInfo;
+import com.portfolio.silver_lady_s.entity.SiteSettings;
 import com.portfolio.silver_lady_s.entity.User;
 import com.portfolio.silver_lady_s.entity.UserRole;
 import com.portfolio.silver_lady_s.repository.AboutUsRepository;
 import com.portfolio.silver_lady_s.repository.ContactInfoRepository;
+import com.portfolio.silver_lady_s.repository.SiteSettingsRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +23,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final AboutUsRepository aboutUsRepository;
     private final ContactInfoRepository contactInfoRepository;
+    private final SiteSettingsRepository siteSettingsRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -58,6 +61,12 @@ public class DataInitializer implements CommandLineRunner {
             c.setAddress("Toshkent, ...");
             c.setWorkingHours("09:00 - 21:00");
             contactInfoRepository.save(c);
+        }
+
+        if (siteSettingsRepository.count() == 0) {
+            SiteSettings s = new SiteSettings();
+            s.setLeavesEffectEnabled(false);
+            siteSettingsRepository.save(s);
         }
 
         if (adminEnabled && !userRepository.existsByRole(UserRole.ADMIN)) {
