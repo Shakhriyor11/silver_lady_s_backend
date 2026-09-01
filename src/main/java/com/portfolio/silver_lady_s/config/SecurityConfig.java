@@ -67,6 +67,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/about").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/contact-info").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/site-settings").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/*/similar").permitAll()
@@ -90,6 +91,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.PUT,  "/api/about").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,  "/api/contact-info").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,  "/api/site-settings").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,  "/api/contact").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,  "/api/contact/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH,"/api/contact/**").hasRole("ADMIN")
