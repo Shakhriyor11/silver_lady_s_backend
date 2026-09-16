@@ -6,9 +6,11 @@ import com.portfolio.silver_lady_s.dto.category.UpdateCategoryRequest;
 import com.portfolio.silver_lady_s.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.List;
@@ -48,6 +50,18 @@ public class CategoryController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         categoryService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public CategoryDto setImage(@PathVariable Long id, @RequestPart("image") MultipartFile image) {
+        return categoryService.setImage(id, image);
+    }
+
+    @DeleteMapping("/{id}/image")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CategoryDto removeImage(@PathVariable Long id) {
+        return categoryService.removeImage(id);
     }
 
     /**

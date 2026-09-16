@@ -3,6 +3,7 @@ package com.portfolio.silver_lady_s.service;
 import com.portfolio.silver_lady_s.dto.category.CategoryDto;
 import com.portfolio.silver_lady_s.dto.category.CreateCategoryRequest;
 import com.portfolio.silver_lady_s.dto.category.UpdateCategoryRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -13,4 +14,6 @@ public interface CategoryService {
     CategoryDto update(Long id, UpdateCategoryRequest request);
     void delete(Long id);
     void reorder(List<Long> orderedIds);
+    CategoryDto setImage(Long id, MultipartFile image);
+    CategoryDto removeImage(Long id);
 }

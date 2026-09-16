@@ -11,11 +11,13 @@ import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.CategoryService;
+import com.portfolio.silver_lady_s.service.MediaStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final MediaStorageService mediaStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -154,6 +157,35 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         categoryRepository.saveAll(categories);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORIES, allEntries = true)
+    public CategoryDto setImage(Long id, MultipartFile image) {
+        Category c = categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category not found: id=" + id));
+
+        String oldUrl = c.getImageUrl();
+        c.setImageUrl(mediaStorageService.storeInFolder(image, "categories"));
+        if (oldUrl != null) mediaStorageService.delete(oldUrl);
+
+        return CategoryDto.from(categoryRepository.save(c));
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORIES, allEntries = true)
+    public CategoryDto removeImage(Long id) {
+        Category c = categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category not found: id=" + id));
+
+        if (c.getImageUrl() != null) {
+            mediaStorageService.delete(c.getImageUrl());
+            c.setImageUrl(null);
+        }
+
+        return CategoryDto.from(categoryRepository.save(c));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

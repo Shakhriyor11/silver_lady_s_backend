@@ -16,6 +16,7 @@ public class CategoryDto {
     private String nameEn;
     private int sortOrder;
     private boolean showSizeFilter;
+    private String imageUrl;
     private Long parentId;
     private List<CategoryDto> children;
 
@@ -31,6 +32,7 @@ public class CategoryDto {
                 c.getNameEn(),
                 c.getSortOrder(),
                 c.isShowSizeFilter(),
+                c.getImageUrl(),
                 c.getParent() != null ? c.getParent().getId() : null,
                 kids
         );
