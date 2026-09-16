@@ -128,6 +128,23 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             @Param("excludeIds") List<Long> excludeIds,
             Pageable pageable);
 
+    // ── Home page: top-N products per category in a single round trip ────────
+
+    @Query(value = """
+            SELECT sub.category_id, sub.product_id
+            FROM (
+                SELECT pc.category_id AS category_id, p.id AS product_id,
+                       ROW_NUMBER() OVER (PARTITION BY pc.category_id ORDER BY p.id DESC) AS rn
+                FROM products p
+                JOIN product_categories pc ON pc.product_id = p.id
+                WHERE p.active = true AND pc.category_id IN (:categoryIds)
+            ) sub
+            WHERE sub.rn <= :limit
+            ORDER BY sub.category_id, sub.rn
+            """, nativeQuery = true)
+    List<Object[]> findTopProductIdsByCategoryIds(@Param("categoryIds") List<Long> categoryIds,
+                                                   @Param("limit") int limit);
+
     // ── Distinct sizes (for filter UI) ───────────────────────────────────────
 
     @Query(value = """

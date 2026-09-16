@@ -18,6 +18,7 @@ public class CacheConfig {
     public static final String CACHE_CAROUSEL      = "carousel";
     public static final String CACHE_CONTACT_INFO  = "contactInfo";
     public static final String CACHE_SITE_SETTINGS = "siteSettings";
+    public static final String CACHE_HOME_SECTIONS = "homeSections";
 
     @Bean
     public CacheManager cacheManager() {
@@ -27,7 +28,9 @@ public class CacheConfig {
                 build(CACHE_ABOUT,         30, TimeUnit.MINUTES,  10),
                 build(CACHE_CAROUSEL,       5, TimeUnit.MINUTES,  10),
                 build(CACHE_CONTACT_INFO,  30, TimeUnit.MINUTES,  10),
-                build(CACHE_SITE_SETTINGS, 30, TimeUnit.MINUTES,  10)
+                build(CACHE_SITE_SETTINGS, 30, TimeUnit.MINUTES,  10),
+                // TTL-based only (no manual eviction) — homepage summary can tolerate a couple minutes of staleness
+                build(CACHE_HOME_SECTIONS,  2, TimeUnit.MINUTES,  20)
         ));
         return manager;
     }

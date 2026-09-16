@@ -3,6 +3,7 @@ package com.portfolio.silver_lady_s.controller;
 import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CategoryDiscountRequest;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
+import com.portfolio.silver_lady_s.dto.product.HomeSectionDto;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.SizeCountDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
@@ -49,6 +50,13 @@ public class ProductController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         Pageable pageable = PageRequest.of(page, size);
         return productService.getProducts(categoryId, search, sort, sizeFilter, includeArchived && isAdmin, pageable);
+    }
+
+    @GetMapping("/home-sections")
+    public List<HomeSectionDto> getHomeSections(
+            @RequestParam(defaultValue = "4") @Min(1) @Max(20) int limit
+    ) {
+        return productService.getHomeSections(limit);
     }
 
     @GetMapping("/sizes")
