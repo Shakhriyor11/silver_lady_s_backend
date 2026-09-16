@@ -1,7 +1,10 @@
 package com.portfolio.silver_lady_s.service.impl;
 
+import com.portfolio.silver_lady_s.config.CacheConfig;
 import com.portfolio.silver_lady_s.dto.PageResponse;
+import com.portfolio.silver_lady_s.dto.category.CategoryDto;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
+import com.portfolio.silver_lady_s.dto.product.HomeSectionDto;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.SizeCountDto;
 import com.portfolio.silver_lady_s.dto.product.SizeEntryRequest;
@@ -17,6 +20,7 @@ import com.portfolio.silver_lady_s.service.ProductService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -27,12 +31,15 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -75,6 +82,46 @@ public class ProductServiceImpl implements ProductService {
         return rows.stream()
                 .map(row -> new SizeCountDto((String) row[0], ((Number) row[1]).longValue()))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(CacheConfig.CACHE_HOME_SECTIONS)
+    public List<HomeSectionDto> getHomeSections(int limitPerCategory) {
+        List<Category> flattened = categoryRepository.findAllByParentIsNullOrderBySortOrderAscIdAsc().stream()
+                .flatMap(c -> Stream.concat(Stream.of(c), c.getChildren().stream()))
+                .toList();
+        if (flattened.isEmpty()) return List.of();
+
+        List<Long> categoryIds = flattened.stream().map(Category::getId).toList();
+        List<Object[]> rows = productRepository.findTopProductIdsByCategoryIds(categoryIds, limitPerCategory);
+        if (rows.isEmpty()) return List.of();
+
+        Map<Long, List<Long>> productIdsByCategory = new LinkedHashMap<>();
+        for (Object[] row : rows) {
+            Long categoryId = ((Number) row[0]).longValue();
+            Long productId = ((Number) row[1]).longValue();
+            productIdsByCategory.computeIfAbsent(categoryId, k -> new ArrayList<>()).add(productId);
+        }
+
+        List<Long> allProductIds = rows.stream().map(row -> ((Number) row[1]).longValue()).distinct().toList();
+        Map<Long, Product> productsById = productRepository.findByIdsWithDetails(allProductIds).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
+        List<HomeSectionDto> sections = new ArrayList<>();
+        for (Category cat : flattened) {
+            List<Long> ids = productIdsByCategory.get(cat.getId());
+            if (ids == null || ids.isEmpty()) continue;
+            List<ProductDto> products = ids.stream()
+                    .map(productsById::get)
+                    .filter(Objects::nonNull)
+                    .map(ProductDto::from)
+                    .toList();
+            if (!products.isEmpty()) {
+                sections.add(new HomeSectionDto(CategoryDto.from(cat), products));
+            }
+        }
+        return sections;
     }
 
     private PageResponse<ProductDto> fetchByIds(Page<Long> idPage, Pageable pageable) {

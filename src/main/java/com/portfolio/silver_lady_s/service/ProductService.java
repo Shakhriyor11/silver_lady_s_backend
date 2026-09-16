@@ -2,6 +2,7 @@ package com.portfolio.silver_lady_s.service;
 
 import com.portfolio.silver_lady_s.dto.PageResponse;
 import com.portfolio.silver_lady_s.dto.product.CreateProductRequest;
+import com.portfolio.silver_lady_s.dto.product.HomeSectionDto;
 import com.portfolio.silver_lady_s.dto.product.ProductDto;
 import com.portfolio.silver_lady_s.dto.product.SizeCountDto;
 import com.portfolio.silver_lady_s.dto.product.UpdateProductRequest;
@@ -17,6 +18,8 @@ public interface ProductService {
                                           boolean includeArchived, Pageable pageable);
 
     List<SizeCountDto> getAvailableSizes(Long categoryId);
+
+    List<HomeSectionDto> getHomeSections(int limitPerCategory);
 
     PageResponse<ProductDto> getArchivedProducts(Pageable pageable);
 
