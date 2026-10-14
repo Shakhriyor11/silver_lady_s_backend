@@ -224,7 +224,7 @@ class ProductServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).findActiveIds("uzuk", null, null, null, false, pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
-        verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
+        verify(productRepository, never()).findIdsByActiveTrueOrderByIdDesc(any());
     }
 
     @Test
@@ -245,25 +245,27 @@ class ProductServiceImplTest {
     @Test
     void getProducts_emptySearch_callsFindAll() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.findAllByActiveTrueOrderByIdDesc(pageable))
-                .thenReturn(new PageImpl<>(List.of(product)));
+        when(productRepository.findIdsByActiveTrueOrderByIdDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
 
         PageResponse<ProductDto> result = productService.getProducts(null, "", null, null, false, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
+        verify(productRepository).findIdsByActiveTrueOrderByIdDesc(pageable);
         verify(productRepository, never()).findActiveIds(any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
     void getProducts_nullSearch_callsFindAll() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.findAllByActiveTrueOrderByIdDesc(pageable))
+        when(productRepository.findIdsByActiveTrueOrderByIdDesc(pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
         productService.getProducts(null, null, null, null, false, pageable);
 
-        verify(productRepository).findAllByActiveTrueOrderByIdDesc(pageable);
+        verify(productRepository).findIdsByActiveTrueOrderByIdDesc(pageable);
     }
 
     @Test
@@ -278,19 +280,38 @@ class ProductServiceImplTest {
 
         verify(productRepository).findActiveIds(null, 1L, null, null, false, pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
-        verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
+        verify(productRepository, never()).findIdsByActiveTrueOrderByIdDesc(any());
     }
 
     @Test
     void getProducts_includeArchived_callsFindAllOrderByIdDesc() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.findAllByOrderByIdDesc(pageable))
-                .thenReturn(new PageImpl<>(List.of(product)));
+        when(productRepository.findIdsByOrderByIdDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
 
         PageResponse<ProductDto> result = productService.getProducts(null, null, null, null, true, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).findAllByOrderByIdDesc(pageable);
-        verify(productRepository, never()).findAllByActiveTrueOrderByIdDesc(any());
+        verify(productRepository).findIdsByOrderByIdDesc(pageable);
+        verify(productRepository, never()).findIdsByActiveTrueOrderByIdDesc(any());
+    }
+
+    // ── getArchivedProducts ────────────────────────────────────────────────────────
+
+    @Test
+    void getArchivedProducts_callsFindIdsByActiveFalse() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.findIdsByActiveFalseOrderByIdDesc(pageable))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
+
+        PageResponse<ProductDto> result = productService.getArchivedProducts(pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(productRepository).findIdsByActiveFalseOrderByIdDesc(pageable);
+        verify(productRepository).findByIdsWithDetails(List.of(10L));
     }
 }

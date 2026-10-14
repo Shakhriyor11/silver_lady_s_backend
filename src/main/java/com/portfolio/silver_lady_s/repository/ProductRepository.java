@@ -15,30 +15,36 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, ProductFilterRepository {
 
-    // ── Simple list views (no filter — single-step, no JOIN) ─────────────────
+    // ── Simple list views (no filter) — id-only projection ───────────────────
+    // Qasddan Page<Long>: Page<Product> + @EntityGraph(categories) Pageable bilan
+    // ishlatilsa, categories @ManyToMany JOIN tufayli Hibernate SQL darajasida
+    // LIMIT/OFFSET qila olmay, BUTUN jadvalni xotiraga yuklab, sahifalashni
+    // Java'da qo'lda bajaradi (HHH90003004: "applying in memory"). Bu yerda
+    // avval faqat id lar sahifalanadi (haqiqiy SQL LIMIT/OFFSET bilan), keyin
+    // fetchByIds() faqat o'sha sahifadagi qatorlar uchun JOIN FETCH qiladi.
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByActiveTrueOrderByIdDesc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p WHERE p.active = true ORDER BY p.id DESC")
+    Page<Long> findIdsByActiveTrueOrderByIdDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByActiveTrueOrderByPriceAsc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p WHERE p.active = true ORDER BY p.price ASC")
+    Page<Long> findIdsByActiveTrueOrderByPriceAsc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByActiveTrueOrderByPriceDesc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p WHERE p.active = true ORDER BY p.price DESC")
+    Page<Long> findIdsByActiveTrueOrderByPriceDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByActiveFalseOrderByIdDesc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p WHERE p.active = false ORDER BY p.id DESC")
+    Page<Long> findIdsByActiveFalseOrderByIdDesc(Pageable pageable);
 
     // ── Admin view: active + archived together ────────────────────────────────
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByOrderByIdDesc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p ORDER BY p.id DESC")
+    Page<Long> findIdsByOrderByIdDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByOrderByPriceAsc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p ORDER BY p.price ASC")
+    Page<Long> findIdsByOrderByPriceAsc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "categories")
-    Page<Product> findAllByOrderByPriceDesc(Pageable pageable);
+    @Query("SELECT p.id FROM Product p ORDER BY p.price DESC")
+    Page<Long> findIdsByOrderByPriceDesc(Pageable pageable);
 
     // ── Checkout: pessimistic lock (SELECT … FOR UPDATE) ─────────────────────
 
