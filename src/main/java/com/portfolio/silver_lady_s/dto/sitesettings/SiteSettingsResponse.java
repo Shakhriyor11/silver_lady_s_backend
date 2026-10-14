@@ -8,8 +8,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public class SiteSettingsResponse {
     private boolean leavesEffectEnabled;
+    private boolean snowEffectEnabled;
 
     public static SiteSettingsResponse from(SiteSettings s) {
-        return new SiteSettingsResponse(s.isLeavesEffectEnabled());
+        return new SiteSettingsResponse(s.isLeavesEffectEnabled(), s.isSnowEffectEnabled());
     }
 }

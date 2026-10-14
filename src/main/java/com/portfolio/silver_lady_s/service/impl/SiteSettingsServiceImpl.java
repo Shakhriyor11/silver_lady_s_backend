@@ -35,7 +35,12 @@ public class SiteSettingsServiceImpl implements SiteSettingsService {
         SiteSettings s = siteSettingsRepository.findTopByOrderByIdAsc()
                 .orElseThrow(() -> new NotFoundException("Site settings not found"));
 
-        s.setLeavesEffectEnabled(dto.getLeavesEffectEnabled());
+        if (dto.getLeavesEffectEnabled() != null) {
+            s.setLeavesEffectEnabled(dto.getLeavesEffectEnabled());
+        }
+        if (dto.getSnowEffectEnabled() != null) {
+            s.setSnowEffectEnabled(dto.getSnowEffectEnabled());
+        }
 
         return SiteSettingsResponse.from(siteSettingsRepository.save(s));
     }

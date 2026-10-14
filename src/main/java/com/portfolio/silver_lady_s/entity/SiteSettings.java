@@ -20,4 +20,7 @@ public class SiteSettings extends BaseTimeEntity {
 
     @Column(nullable = false)
     private boolean leavesEffectEnabled = false;
+
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean snowEffectEnabled = false;
 }
