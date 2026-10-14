@@ -58,18 +58,16 @@ public class ProductServiceImpl implements ProductService {
         String q    = StringUtils.hasText(search)     ? search.trim()     : null;
         String size = StringUtils.hasText(sizeFilter) ? sizeFilter.trim() : null;
 
-        if (q == null && categoryId == null && size == null) {
-            Page<Product> page = includeArchived
-                    ? ("price_asc".equals(sort)  ? productRepository.findAllByOrderByPriceAsc(pageable)
-                     : "price_desc".equals(sort) ? productRepository.findAllByOrderByPriceDesc(pageable)
-                     :                             productRepository.findAllByOrderByIdDesc(pageable))
-                    : ("price_asc".equals(sort)  ? productRepository.findAllByActiveTrueOrderByPriceAsc(pageable)
-                     : "price_desc".equals(sort) ? productRepository.findAllByActiveTrueOrderByPriceDesc(pageable)
-                     :                             productRepository.findAllByActiveTrueOrderByIdDesc(pageable));
-            return new PageResponse<>(page.map(ProductDto::from));
-        }
+        Page<Long> idPage = (q == null && categoryId == null && size == null)
+                ? (includeArchived
+                    ? ("price_asc".equals(sort)  ? productRepository.findIdsByOrderByPriceAsc(pageable)
+                     : "price_desc".equals(sort) ? productRepository.findIdsByOrderByPriceDesc(pageable)
+                     :                             productRepository.findIdsByOrderByIdDesc(pageable))
+                    : ("price_asc".equals(sort)  ? productRepository.findIdsByActiveTrueOrderByPriceAsc(pageable)
+                     : "price_desc".equals(sort) ? productRepository.findIdsByActiveTrueOrderByPriceDesc(pageable)
+                     :                             productRepository.findIdsByActiveTrueOrderByIdDesc(pageable)))
+                : productRepository.findActiveIds(q, categoryId, size, sort, includeArchived, pageable);
 
-        Page<Long> idPage = productRepository.findActiveIds(q, categoryId, size, sort, includeArchived, pageable);
         return fetchByIds(idPage, pageable);
     }
 
@@ -137,8 +135,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductDto> getArchivedProducts(Pageable pageable) {
-        return new PageResponse<>(
-                productRepository.findAllByActiveFalseOrderByIdDesc(pageable).map(ProductDto::from));
+        return fetchByIds(productRepository.findIdsByActiveFalseOrderByIdDesc(pageable), pageable);
     }
 
     @Override
