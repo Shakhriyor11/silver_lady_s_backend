@@ -34,6 +34,8 @@ public class CacheConfig {
                 build(CACHE_CAROUSEL,      5, TimeUnit.MINUTES,  10),
                 build(CACHE_CONTACT_INFO, 30, TimeUnit.MINUTES,  10),
                 build(CACHE_SITEMAP,      15, TimeUnit.MINUTES,   2)
+                build(CACHE_CONTACT_INFO, 30, TimeUnit.MINUTES,  10),
+                build(CACHE_SITEMAP,      15, TimeUnit.MINUTES,   2)
                 build(CACHE_CATEGORIES,    10, TimeUnit.MINUTES, 100),
                 build(CACHE_ABOUT,         30, TimeUnit.MINUTES,  10),
                 build(CACHE_CAROUSEL,       5, TimeUnit.MINUTES,  10),

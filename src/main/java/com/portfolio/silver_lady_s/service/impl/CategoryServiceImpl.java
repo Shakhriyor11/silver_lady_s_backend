@@ -13,6 +13,7 @@ import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.CategoryService;
 import com.portfolio.silver_lady_s.util.SlugUtil;
 import com.portfolio.silver_lady_s.service.MediaStorageService;
+import com.portfolio.silver_lady_s.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
