@@ -79,6 +79,13 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
+  seo:
+    # Frontend sayti manzili (sitemap.xml va robots.txt shu domenga nisbatan URL yasaydi)
+    site-url: ${SEO_SITE_URL:https://silverladys.uz}
+    # Frontend routing'iga mos qilib o'zgartiring (masalan "/mahsulot/" bo'lsa)
+    product-path: ${SEO_PRODUCT_PATH:/product/}
+    category-path: ${SEO_CATEGORY_PATH:/category/}
+
   recommendation:
     max-viewed-ids: ${RECOMMENDATION_MAX_VIEWED_IDS:200}
 

@@ -18,6 +18,9 @@ public class CategoryDto {
     private boolean showSizeFilter;
     private Long parentId;
     private List<CategoryDto> children;
+    private String slug;
+    private String seoTitle;
+    private String seoDescription;
 
     public static CategoryDto from(Category c) {
         List<CategoryDto> kids = c.getChildren().stream()
@@ -32,7 +35,10 @@ public class CategoryDto {
                 c.getSortOrder(),
                 c.isShowSizeFilter(),
                 c.getParent() != null ? c.getParent().getId() : null,
-                kids
+                kids,
+                c.getSlug(),
+                c.getSeoTitle(),
+                c.getSeoDescription()
         );
     }
 }

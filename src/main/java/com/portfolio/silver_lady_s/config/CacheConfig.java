@@ -17,6 +17,7 @@ public class CacheConfig {
     public static final String CACHE_ABOUT        = "about";
     public static final String CACHE_CAROUSEL     = "carousel"; 
     public static final String CACHE_CONTACT_INFO = "contactInfo";
+    public static final String CACHE_SITEMAP      = "sitemap";
 
     @Bean
     public CacheManager cacheManager() {
@@ -25,7 +26,8 @@ public class CacheConfig {
                 build(CACHE_CATEGORIES,   10, TimeUnit.MINUTES, 100),
                 build(CACHE_ABOUT,        30, TimeUnit.MINUTES,  10),
                 build(CACHE_CAROUSEL,      5, TimeUnit.MINUTES,  10),
-                build(CACHE_CONTACT_INFO, 30, TimeUnit.MINUTES,  10)
+                build(CACHE_CONTACT_INFO, 30, TimeUnit.MINUTES,  10),
+                build(CACHE_SITEMAP,      15, TimeUnit.MINUTES,   2)
         ));
         return manager;
     }

@@ -49,6 +49,12 @@ public class CreateProductRequest {
 
     private Boolean active;
 
+    @Size(max = 160)
+    private String seoTitle;
+
+    @Size(max = 300)
+    private String seoDescription;
+
     @AssertTrue(message = "discountEndsAt must be after discountStartsAt")
     private boolean isDiscountDatesValid() {
         if (discountStartsAt == null || discountEndsAt == null) return true;

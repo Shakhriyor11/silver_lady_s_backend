@@ -66,6 +66,7 @@ public class ProductImageServiceImpl implements ProductImageService {
                 img.setContentType(files.get(i).getContentType());
                 img.setDisplayOrder(current + i);
                 img.setPrimary(isFirstImage && i == 0);
+                img.setAltText(product.getName() + " — rasm " + (current + i + 1));
                 toSave.add(img);
             }
 
@@ -143,6 +144,14 @@ public class ProductImageServiceImpl implements ProductImageService {
                 .stream()
                 .map(ProductImageDto::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public ProductImageDto setAltText(Long productId, Long imageId, String altText) {
+        ProductImage img = findImage(productId, imageId);
+        img.setAltText(altText);
+        return ProductImageDto.from(productImageRepository.save(img));
     }
 
     // -------------------------------------------------------------------------

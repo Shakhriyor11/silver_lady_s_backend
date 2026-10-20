@@ -18,4 +18,10 @@ public class CreateCategoryRequest {
 
     private Long parentId;
     private boolean showSizeFilter;
+
+    @Size(max = 160)
+    private String seoTitle;
+
+    @Size(max = 300)
+    private String seoDescription;
 }

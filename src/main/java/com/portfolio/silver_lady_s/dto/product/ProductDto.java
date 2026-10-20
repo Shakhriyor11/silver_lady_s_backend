@@ -37,6 +37,9 @@ public class ProductDto {
     private Instant createdAt;
     private Instant updatedAt;
     private List<ProductImageDto> images;
+    private String slug;
+    private String seoTitle;
+    private String seoDescription;
 
     public static ProductDto from(Product p) {
         List<CategoryInfo> cats = p.getCategories().stream()
@@ -70,7 +73,10 @@ public class ProductDto {
                 p.isActive(),
                 p.getCreatedAt(),
                 p.getUpdatedAt(),
-                imgs
+                imgs,
+                p.getSlug(),
+                p.getSeoTitle(),
+                p.getSeoDescription()
         );
     }
 
