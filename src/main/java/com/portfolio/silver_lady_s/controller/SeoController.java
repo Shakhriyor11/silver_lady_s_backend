@@ -63,9 +63,11 @@ public class SeoController {
     @GetMapping(value = "/robots.txt", produces = "text/plain")
     public ResponseEntity<String> robots() {
         String base = stripTrailingSlash(siteUrl);
+        // /api/ ochiq qolishi shart: React sahifalar ma'lumotni API'dan oladi, Googlebot render qilganda
+        // robots.txt'ga amal qiladi — /api/ yopilsa sahifa bo'sh ko'rinadi va indekslanmaydi.
+        // Shaxsiy sahifalar frontend'da <meta robots="noindex"> bilan yopilgan.
         String body = """
                 User-agent: *
-                Disallow: /api/
                 Disallow: /admin/
                 Allow: /
 
