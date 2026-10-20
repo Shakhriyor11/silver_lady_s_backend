@@ -153,6 +153,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     List<Object[]> findSizesWithCountsByCategory(@Param("categoryId") Long categoryId);
 
     // ── Sitemap: faqat yengil ustunlar (id, slug, updatedAt) ─────────────────
-    @Query("SELECT p.slug AS slug, p.updatedAt AS updatedAt FROM Product p WHERE p.active = true AND p.slug IS NOT NULL")
+    @Query("SELECT p.id AS id, p.slug AS slug, p.updatedAt AS updatedAt FROM Product p WHERE p.active = true AND p.slug IS NOT NULL")
     List<SlugProjection> findActiveSlugsForSitemap();
 }
