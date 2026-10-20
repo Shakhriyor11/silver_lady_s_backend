@@ -20,7 +20,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     boolean existsByNameIgnoreCaseAndParentId(String name, Long parentId);
     Optional<Category> findByNameIgnoreCaseAndParentId(String name, Long parentId);
 
-    // ── Sitemap: faqat yengil ustunlar (slug, updatedAt) ─────────────────────
-    @Query("SELECT c.slug AS slug, c.updatedAt AS updatedAt FROM Category c WHERE c.slug IS NOT NULL")
+    // ── Sitemap: faqat yengil ustunlar (id, slug, updatedAt) ─────────────────
+    @Query("SELECT c.id AS id, c.slug AS slug, c.updatedAt AS updatedAt FROM Category c")
     List<SlugProjection> findAllSlugsForSitemap();
 }

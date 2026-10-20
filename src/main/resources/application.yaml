@@ -82,9 +82,9 @@ app:
   seo:
     # Frontend sayti manzili (sitemap.xml va robots.txt shu domenga nisbatan URL yasaydi)
     site-url: ${SEO_SITE_URL:https://silverladys.uz}
-    # Frontend routing'iga mos qilib o'zgartiring (masalan "/mahsulot/" bo'lsa)
+    # Frontend routing'iga mos qilib o'zgartiring
     product-path: ${SEO_PRODUCT_PATH:/product/}
-    category-path: ${SEO_CATEGORY_PATH:/category/}
+    category-path: ${SEO_CATEGORY_PATH:/products?categoryId=}
 
   recommendation:
     max-viewed-ids: ${RECOMMENDATION_MAX_VIEWED_IDS:200}
