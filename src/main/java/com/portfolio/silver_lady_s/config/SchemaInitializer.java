@@ -28,6 +28,22 @@ public class SchemaInitializer implements ApplicationRunner {
         runSafe("ALTER TABLE about_us ADD COLUMN IF NOT EXISTS created_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT NOW()");
         runSafe("ALTER TABLE about_us ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT NOW()");
 
+        // ── SEO: slug ustunlari + backfill + unique index (ddl-auto buni to'g'ri qila olmaydi) ──
+        runSafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS slug VARCHAR(220)");
+        runSafe("ALTER TABLE categories ADD COLUMN IF NOT EXISTS slug VARCHAR(120)");
+        runSafe("""
+                UPDATE products
+                SET slug = lower(regexp_replace(regexp_replace(trim(name), '[^a-zA-Z0-9]+', '-', 'g'), '(^-+|-+$)', '', 'g')) || '-' || id
+                WHERE slug IS NULL
+                """);
+        runSafe("""
+                UPDATE categories
+                SET slug = lower(regexp_replace(regexp_replace(trim(name), '[^a-zA-Z0-9]+', '-', 'g'), '(^-+|-+$)', '', 'g')) || '-' || id
+                WHERE slug IS NULL
+                """);
+        runSafe("CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON products(slug)");
+        runSafe("CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug)");
+
         // ── pg_trgm full-text search indexes ─────────────────────────────────────
         try {
             jdbc.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm");

@@ -17,6 +17,7 @@ import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.ProductService;
+import com.portfolio.silver_lady_s.util.SlugUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -192,6 +193,8 @@ public class ProductServiceImpl implements ProductService {
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().addAll(cats);
         if (req.getActive() != null) p.setActive(req.getActive());
+        p.setSeoTitle(req.getSeoTitle());
+        p.setSeoDescription(req.getSeoDescription());
 
         if (req.getSizeEntries() != null && !req.getSizeEntries().isEmpty()) {
             for (int i = 0; i < req.getSizeEntries().size(); i++) {
@@ -208,7 +211,9 @@ public class ProductServiceImpl implements ProductService {
             p.setStockQuantity(req.getStockQuantity() != null ? req.getStockQuantity() : 0);
         }
 
-        return ProductDto.from(productRepository.save(p));
+        Product saved = productRepository.save(p);
+        saved.setSlug(SlugUtil.slugifyWithId(saved.getName(), saved.getId()));
+        return ProductDto.from(saved);
     }
 
     @Override
@@ -235,6 +240,11 @@ public class ProductServiceImpl implements ProductService {
         p.getCategories().clear();
         p.getCategories().addAll(cats);
         if (req.getActive() != null) p.setActive(req.getActive());
+        p.setSeoTitle(req.getSeoTitle());
+        p.setSeoDescription(req.getSeoDescription());
+        if (p.getSlug() == null) {
+            p.setSlug(SlugUtil.slugifyWithId(p.getName(), p.getId()));
+        }
 
         if (req.getSizeEntries() != null) {
             mergeSizeEntries(p, req.getSizeEntries());

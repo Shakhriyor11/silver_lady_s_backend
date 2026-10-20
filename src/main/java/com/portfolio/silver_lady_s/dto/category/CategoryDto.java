@@ -19,6 +19,9 @@ public class CategoryDto {
     private String imageUrl;
     private Long parentId;
     private List<CategoryDto> children;
+    private String slug;
+    private String seoTitle;
+    private String seoDescription;
 
     public static CategoryDto from(Category c) {
         List<CategoryDto> kids = c.getChildren().stream()
@@ -34,7 +37,10 @@ public class CategoryDto {
                 c.isShowSizeFilter(),
                 c.getImageUrl(),
                 c.getParent() != null ? c.getParent().getId() : null,
-                kids
+                kids,
+                c.getSlug(),
+                c.getSeoTitle(),
+                c.getSeoDescription()
         );
     }
 }

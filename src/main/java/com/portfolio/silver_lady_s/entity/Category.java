@@ -34,8 +34,28 @@ public class Category extends BaseTimeEntity {
     @Column(name = "show_size_filter", nullable = false)
     private boolean showSizeFilter = false;
 
+    /** SEO-friendly URL bo'lagi, nom + id dan avtomatik yasaladi, bir marta o'rnatilib keyin o'zgarmaydi */
+    @Column(unique = true, length = 120)
+    private String slug;
+
+    @Column(name = "seo_title", length = 160)
+    private String seoTitle;
+
+    @Column(name = "seo_description", length = 300)
+    private String seoDescription;
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    /** SEO-friendly URL bo'lagi, nom + id dan avtomatik yasaladi, bir marta o'rnatilib keyin o'zgarmaydi */
+    @Column(unique = true, length = 120)
+    private String slug;
+
+    @Column(name = "seo_title", length = 160)
+    private String seoTitle;
+
+    @Column(name = "seo_description", length = 300)
+    private String seoDescription;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")

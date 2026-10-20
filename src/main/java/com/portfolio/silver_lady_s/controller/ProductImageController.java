@@ -1,7 +1,9 @@
 package com.portfolio.silver_lady_s.controller;
 
 import com.portfolio.silver_lady_s.dto.product.ProductImageDto;
+import com.portfolio.silver_lady_s.dto.product.UpdateAltTextRequest;
 import com.portfolio.silver_lady_s.service.ProductImageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -57,5 +59,14 @@ public class ProductImageController {
             @RequestBody List<Long> orderedIds
     ) {
         return productImageService.reorder(productId, orderedIds);
+    }
+
+    @PatchMapping("/{imageId}/alt-text")
+    public ProductImageDto updateAltText(
+            @PathVariable Long productId,
+            @PathVariable Long imageId,
+            @Valid @RequestBody UpdateAltTextRequest req
+    ) {
+        return productImageService.setAltText(productId, imageId, req.getAltText());
     }
 }

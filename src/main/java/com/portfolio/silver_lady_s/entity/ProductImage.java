@@ -47,4 +47,8 @@ public class ProductImage extends BaseTimeEntity {
     /** Asosiy rasm — listing va preview uchun ishlatiladi */
     @Column(name = "is_primary", nullable = false)
     private boolean primary = false;
+
+    /** Google Image Search va ekran o'quvchilari uchun tasvir matni */
+    @Column(name = "alt_text", length = 255)
+    private String altText;
 }

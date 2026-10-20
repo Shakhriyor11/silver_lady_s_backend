@@ -18,4 +18,7 @@ public interface ProductImageService {
 
     /** Galereya tartibini yangilaydi — orderedIds ro'yxati yangi tartibni bildiradi */
     List<ProductImageDto> reorder(Long productId, List<Long> orderedIds);
+
+    /** Rasm uchun alt matnini yangilaydi (Google Image Search / ekran o'quvchilar uchun) */
+    ProductImageDto setAltText(Long productId, Long imageId, String altText);
 }

@@ -11,7 +11,9 @@ import com.portfolio.silver_lady_s.exception.NotFoundException;
 import com.portfolio.silver_lady_s.repository.CategoryRepository;
 import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.service.CategoryService;
+import com.portfolio.silver_lady_s.util.SlugUtil;
 import com.portfolio.silver_lady_s.service.MediaStorageService;
+import com.portfolio.silver_lady_s.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -64,6 +66,8 @@ public class CategoryServiceImpl implements CategoryService {
         c.setNameRu(request.getNameRu());
         c.setNameEn(request.getNameEn());
         c.setShowSizeFilter(request.isShowSizeFilter());
+        c.setSeoTitle(request.getSeoTitle());
+        c.setSeoDescription(request.getSeoDescription());
 
         if (parentId != null) {
             Category parent = categoryRepository.findById(parentId)
@@ -77,7 +81,9 @@ public class CategoryServiceImpl implements CategoryService {
         // sort_order = mavjud kategoriyalar sonidan keyin (oxiriga qo'shilsin)
         c.setSortOrder((int) categoryRepository.count());
 
-        return CategoryDto.from(categoryRepository.save(c));
+        Category saved = categoryRepository.save(c);
+        saved.setSlug(SlugUtil.slugifyWithId(saved.getName(), saved.getId()));
+        return CategoryDto.from(saved);
     }
 
     @Override
@@ -97,6 +103,11 @@ public class CategoryServiceImpl implements CategoryService {
         c.setNameRu(request.getNameRu());
         c.setNameEn(request.getNameEn());
         c.setShowSizeFilter(request.isShowSizeFilter());
+        c.setSeoTitle(request.getSeoTitle());
+        c.setSeoDescription(request.getSeoDescription());
+        if (c.getSlug() == null) {
+            c.setSlug(SlugUtil.slugifyWithId(c.getName(), c.getId()));
+        }
 
         if (parentId == null) {
             c.setParent(null);
