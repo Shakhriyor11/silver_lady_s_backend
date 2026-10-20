@@ -73,6 +73,16 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** SEO-friendly URL bo'lagi, nom + id dan avtomatik yasaladi, bir marta o'rnatilib keyin o'zgarmaydi */
+    @Column(unique = true, length = 220)
+    private String slug;
+
+    @Column(name = "seo_title", length = 160)
+    private String seoTitle;
+
+    @Column(name = "seo_description", length = 300)
+    private String seoDescription;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL,
                orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sortOrder ASC, id ASC")

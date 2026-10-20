@@ -11,13 +11,15 @@ public class ProductImageDto {
     private String url;
     private boolean primary;
     private int displayOrder;
+    private String altText;
 
     public static ProductImageDto from(ProductImage img) {
         return new ProductImageDto(
                 img.getId(),
                 img.getUrl(),
                 img.isPrimary(),
-                img.getDisplayOrder()
+                img.getDisplayOrder(),
+                img.getAltText()
         );
     }
 }
