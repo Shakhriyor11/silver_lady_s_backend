@@ -27,4 +27,12 @@ public class StatsOverviewDto {
     private long totalUsers;
     private long totalOrders;
     private BigDecimal totalRevenue;
+
+    // Saytdagi faol tovarlar: soni, umumiy dona va umumiy summasi
+    private long totalProducts;
+    private long totalStockQuantity;
+    /** Joriy narx (chegirma bilan) × qoldiq — "Общая сумма" */
+    private BigDecimal totalPrice;
+    /** Chegirmasiz narx × qoldiq */
+    private BigDecimal totalPriceWithoutDiscount;
 }

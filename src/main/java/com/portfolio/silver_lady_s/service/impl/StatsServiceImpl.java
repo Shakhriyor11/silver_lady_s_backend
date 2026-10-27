@@ -6,6 +6,7 @@ import com.portfolio.silver_lady_s.dto.stats.StatsOverviewDto;
 import com.portfolio.silver_lady_s.dto.stats.TopProductDto;
 import com.portfolio.silver_lady_s.entity.SiteVisit;
 import com.portfolio.silver_lady_s.repository.OrderRepository;
+import com.portfolio.silver_lady_s.repository.ProductRepository;
 import com.portfolio.silver_lady_s.repository.ProductViewRepository;
 import com.portfolio.silver_lady_s.repository.SiteVisitRepository;
 import com.portfolio.silver_lady_s.repository.UserRepository;
@@ -27,6 +28,7 @@ public class StatsServiceImpl implements StatsService {
     private final OrderRepository       orderRepository;
     private final UserRepository        userRepository;
     private final ProductViewRepository productViewRepository;
+    private final ProductRepository     productRepository;
 
     @Override
     @Transactional
@@ -68,12 +70,21 @@ public class StatsServiceImpl implements StatsService {
         long totalOrders    = orderRepository.count();
         BigDecimal totalRev = orderRepository.sumTotalRevenue();
 
+        long totalProducts       = productRepository.countByActiveTrue();
+        Long stockQty            = productRepository.sumActiveStockQuantity();
+        BigDecimal totalPrice    = productRepository.sumActiveStockValue();
+        BigDecimal fullPrice     = productRepository.sumActiveStockValueWithoutDiscount();
+
         return new StatsOverviewDto(
                 todayVisitors, weekVisitors, monthVisitors,
                 todayOrders,   weekOrders,   monthOrders,
                 todayRevenue,  weekRevenue,  monthRevenue,
                 todayNewUsers, weekNewUsers, monthNewUsers,
-                totalUsers, totalOrders, totalRev == null ? BigDecimal.ZERO : totalRev
+                totalUsers, totalOrders, totalRev == null ? BigDecimal.ZERO : totalRev,
+                totalProducts,
+                stockQty == null ? 0 : stockQty,
+                totalPrice == null ? BigDecimal.ZERO : totalPrice,
+                fullPrice  == null ? BigDecimal.ZERO : fullPrice
         );
     }
 
