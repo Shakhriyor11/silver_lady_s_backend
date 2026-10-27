@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -174,6 +175,37 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             ORDER BY ps.size
             """, nativeQuery = true)
     List<Object[]> findSizesWithCountsByCategory(@Param("categoryId") Long categoryId);
+
+    // ── Admin statistika: saytdagi (faol) tovarlarning umumiy summasi ────────
+    // Joriy (chegirma hisobga olingan) narx × qoldiq. Har so'rovda NOW() bo'yicha
+    // hisoblanadi, shuning uchun chegirma boshlanishi/tugashi, tovar qo'shilishi,
+    // sotilishi yoki arxivlanishi darhol aks etadi. Formula ProductFilterRepositoryImpl
+    // dagi EFFECTIVE_PRICE va ProductDto#computeSalePrice bilan bir xil.
+    @Query(value = """
+            SELECT COALESCE(SUM(ROUND(
+              CASE
+                WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+                 AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+                 AND p.discount_percent IS NOT NULL AND p.discount_percent > 0
+                  THEN p.price * (1 - p.discount_percent / 100.0)
+                WHEN (p.discount_starts_at IS NULL OR p.discount_starts_at <= NOW())
+                 AND (p.discount_ends_at   IS NULL OR p.discount_ends_at   >  NOW())
+                 AND p.discount_amount IS NOT NULL AND p.discount_amount > 0
+                  THEN GREATEST(0, p.price - p.discount_amount)
+                ELSE p.price
+              END, 2) * p.stock_quantity), 0)
+            FROM products p
+            WHERE p.active = true
+            """, nativeQuery = true)
+    BigDecimal sumActiveStockValue();
+
+    @Query("SELECT COALESCE(SUM(p.price * p.stockQuantity), 0) FROM Product p WHERE p.active = true")
+    BigDecimal sumActiveStockValueWithoutDiscount();
+
+    @Query("SELECT COALESCE(SUM(p.stockQuantity), 0) FROM Product p WHERE p.active = true")
+    Long sumActiveStockQuantity();
+
+    long countByActiveTrue();
 
     // ── Sitemap: faqat yengil ustunlar (id, slug, updatedAt) ─────────────────
     @Query("SELECT p.id AS id, p.slug AS slug, p.updatedAt AS updatedAt FROM Product p WHERE p.active = true AND p.slug IS NOT NULL")
