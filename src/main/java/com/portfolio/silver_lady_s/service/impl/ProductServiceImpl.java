@@ -135,8 +135,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductDto> getArchivedProducts(Pageable pageable) {
-        return fetchByIds(productRepository.findIdsByActiveFalseOrderByIdDesc(pageable), pageable);
+    public PageResponse<ProductDto> getArchivedProducts(String sort, Pageable pageable) {
+        Page<Long> ids = switch (sort == null ? "" : sort) {
+            case "archived_asc" -> productRepository.findArchivedIdsOrderByArchivedAtAsc(pageable);
+            case "created_desc" -> productRepository.findArchivedIdsOrderByCreatedAtDesc(pageable);
+            case "created_asc"  -> productRepository.findArchivedIdsOrderByCreatedAtAsc(pageable);
+            default             -> productRepository.findArchivedIdsOrderByArchivedAtDesc(pageable);
+        };
+        return fetchByIds(ids, pageable);
     }
 
     @Override
@@ -192,7 +198,7 @@ public class ProductServiceImpl implements ProductService {
         p.setDiscountStartsAt(req.getDiscountStartsAt());
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().addAll(cats);
-        if (req.getActive() != null) p.setActive(req.getActive());
+        if (req.getActive() != null) applyActive(p, req.getActive());
         p.setSeoTitle(req.getSeoTitle());
         p.setSeoDescription(req.getSeoDescription());
 
@@ -239,7 +245,7 @@ public class ProductServiceImpl implements ProductService {
         p.setDiscountEndsAt(req.getDiscountEndsAt());
         p.getCategories().clear();
         p.getCategories().addAll(cats);
-        if (req.getActive() != null) p.setActive(req.getActive());
+        if (req.getActive() != null) applyActive(p, req.getActive());
         p.setSeoTitle(req.getSeoTitle());
         p.setSeoDescription(req.getSeoDescription());
         if (p.getSlug() == null) {
@@ -254,6 +260,16 @@ public class ProductServiceImpl implements ProductService {
         }
 
         return ProductDto.from(productRepository.save(p));
+    }
+
+    /** active holatini o'zgartiradi va arxivga tushgan vaqtni (archivedAt) yuritadi */
+    private void applyActive(Product p, boolean active) {
+        if (!active && (p.isActive() || p.getArchivedAt() == null)) {
+            p.setArchivedAt(Instant.now());
+        } else if (active) {
+            p.setArchivedAt(null);
+        }
+        p.setActive(active);
     }
 
     private void mergeSizeEntries(Product p, List<SizeEntryRequest> requested) {
@@ -290,7 +306,7 @@ public class ProductServiceImpl implements ProductService {
     public void archive(Long id) {
         Product p = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Product not found: id=" + id));
-        p.setActive(false);
+        applyActive(p, false);
         productRepository.save(p);
         em.createNativeQuery("DELETE FROM cart_items WHERE product_id = :id")
                 .setParameter("id", id).executeUpdate();
@@ -313,7 +329,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto restore(Long id) {
         Product p = productRepository.findByIdAndActiveFalse(id)
                 .orElseThrow(() -> new NotFoundException("Inactive product not found: id=" + id));
-        p.setActive(true);
+        applyActive(p, true);
         return ProductDto.from(productRepository.save(p));
     }
 

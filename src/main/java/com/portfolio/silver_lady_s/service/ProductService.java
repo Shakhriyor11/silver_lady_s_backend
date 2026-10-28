@@ -21,7 +21,7 @@ public interface ProductService {
 
     List<HomeSectionDto> getHomeSections(int limitPerCategory);
 
-    PageResponse<ProductDto> getArchivedProducts(Pageable pageable);
+    PageResponse<ProductDto> getArchivedProducts(String sort, Pageable pageable);
 
     ProductDto getById(Long id);
 
