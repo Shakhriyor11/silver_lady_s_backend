@@ -36,6 +36,7 @@ public class ProductDto {
     private boolean active;
     private Instant createdAt;
     private Instant updatedAt;
+    private Instant archivedAt;
     private List<ProductImageDto> images;
     private String slug;
     private String seoTitle;
@@ -73,6 +74,7 @@ public class ProductDto {
                 p.isActive(),
                 p.getCreatedAt(),
                 p.getUpdatedAt(),
+                p.getArchivedAt(),
                 imgs,
                 p.getSlug(),
                 p.getSeoTitle(),

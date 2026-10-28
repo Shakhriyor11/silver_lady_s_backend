@@ -68,9 +68,11 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public PageResponse<ProductDto> getArchived(
             @RequestParam(defaultValue = "0")   @Min(0)          int page,
-            @RequestParam(defaultValue = "20")  @Min(1) @Max(500) int size
+            @RequestParam(defaultValue = "20")  @Min(1) @Max(500) int size,
+            // archived_desc | archived_asc | created_desc | created_asc
+            @RequestParam(defaultValue = "archived_desc") String sort
     ) {
-        return productService.getArchivedProducts(PageRequest.of(page, size));
+        return productService.getArchivedProducts(sort, PageRequest.of(page, size));
     }
 
     @GetMapping("/{id}")

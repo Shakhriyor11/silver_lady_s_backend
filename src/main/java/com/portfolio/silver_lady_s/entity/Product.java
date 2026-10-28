@@ -73,6 +73,10 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Mahsulot arxivga (active=false) o'tkazilgan vaqt; faol mahsulotlarda null */
+    @Column(name = "archived_at")
+    private Instant archivedAt;
+
     /** SEO-friendly URL bo'lagi, nom + id dan avtomatik yasaladi, bir marta o'rnatilib keyin o'zgarmaydi */
     @Column(unique = true, length = 220)
     private String slug;

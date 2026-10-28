@@ -301,17 +301,31 @@ class ProductServiceImplTest {
     // ── getArchivedProducts ────────────────────────────────────────────────────────
 
     @Test
-    void getArchivedProducts_callsFindIdsByActiveFalse() {
+    void getArchivedProducts_defaultSort_usesArchivedAtDesc() {
         var pageable = PageRequest.of(0, 20);
-        when(productRepository.findIdsByActiveFalseOrderByIdDesc(pageable))
+        when(productRepository.findArchivedIdsOrderByArchivedAtDesc(pageable))
                 .thenReturn(new PageImpl<>(List.of(10L)));
         when(productRepository.findByIdsWithDetails(List.of(10L)))
                 .thenReturn(List.of(product));
 
-        PageResponse<ProductDto> result = productService.getArchivedProducts(pageable);
+        PageResponse<ProductDto> result = productService.getArchivedProducts(null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(productRepository).findIdsByActiveFalseOrderByIdDesc(pageable);
+        verify(productRepository).findArchivedIdsOrderByArchivedAtDesc(pageable);
         verify(productRepository).findByIdsWithDetails(List.of(10L));
+    }
+
+    @Test
+    void getArchivedProducts_createdAsc_usesCreatedAtAsc() {
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.findArchivedIdsOrderByCreatedAtAsc(pageable))
+                .thenReturn(new PageImpl<>(List.of(10L)));
+        when(productRepository.findByIdsWithDetails(List.of(10L)))
+                .thenReturn(List.of(product));
+
+        productService.getArchivedProducts("created_asc", pageable);
+
+        verify(productRepository).findArchivedIdsOrderByCreatedAtAsc(pageable);
+        verify(productRepository, never()).findArchivedIdsOrderByArchivedAtDesc(any());
     }
 }

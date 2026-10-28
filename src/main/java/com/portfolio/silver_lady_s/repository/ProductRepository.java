@@ -33,8 +33,20 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     @Query("SELECT p.id FROM Product p WHERE p.active = true ORDER BY p.price DESC")
     Page<Long> findIdsByActiveTrueOrderByPriceDesc(Pageable pageable);
 
-    @Query("SELECT p.id FROM Product p WHERE p.active = false ORDER BY p.id DESC")
-    Page<Long> findIdsByActiveFalseOrderByIdDesc(Pageable pageable);
+    // ── Arxiv: arxivga tushgan sana yoki saytga yuklangan sana bo'yicha ──────
+    // archivedAt null bo'lsa (ustun qo'shilishidan oldin arxivlanganlar) updatedAt olinadi
+
+    @Query("SELECT p.id FROM Product p WHERE p.active = false ORDER BY COALESCE(p.archivedAt, p.updatedAt) DESC, p.id DESC")
+    Page<Long> findArchivedIdsOrderByArchivedAtDesc(Pageable pageable);
+
+    @Query("SELECT p.id FROM Product p WHERE p.active = false ORDER BY COALESCE(p.archivedAt, p.updatedAt) ASC, p.id ASC")
+    Page<Long> findArchivedIdsOrderByArchivedAtAsc(Pageable pageable);
+
+    @Query("SELECT p.id FROM Product p WHERE p.active = false ORDER BY p.createdAt DESC, p.id DESC")
+    Page<Long> findArchivedIdsOrderByCreatedAtDesc(Pageable pageable);
+
+    @Query("SELECT p.id FROM Product p WHERE p.active = false ORDER BY p.createdAt ASC, p.id ASC")
+    Page<Long> findArchivedIdsOrderByCreatedAtAsc(Pageable pageable);
 
     // ── Admin view: active + archived together ────────────────────────────────
 
